@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>採用管理.html</title>
+<title>CX採用管理</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
@@ -1595,6 +1595,178 @@ async function setRejected(docId) {
 }
 
 // ── モーダル ──────────────────────────────────────────────────────────
+function renderInterviewPrep(raw) {
+  const text = raw.replace(/緒方さん/g, "社員").replace(/ファイル(も|に)保存します。?\n?/g, "").trim();
+  const lines = text.split('\n');
+  let html = '';
+  let state = 'normal';
+  let speechBuf = '', speechNote = '';
+  let tableRows = [];
+  let secCount = 0;
+
+  const SEC = {
+    '①': {c:'#1565c0', bg:'#e3f2fd'},
+    '②': {c:'#2e7d32', bg:'#e8f5e9'},
+    '③': {c:'#bf360c', bg:'#fbe9e7'},
+    '④': {c:'#6a1b9a', bg:'#f3e5f5'},
+  };
+
+  // **太字** を処理しつつ残りの * を除去
+  function fmt(s) {
+    return esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*/g, '');
+  }
+
+  function flushSpeech() {
+    if (!speechBuf) return;
+    const content = speechBuf.replace(/^「/, '').replace(/」$/, '').trim();
+    html += '<div style="margin:6px 0">';
+    if (speechNote) html += `<div style="color:#8c959f;font-size:10px;font-style:italic;margin-bottom:3px">（${esc(speechNote)}）</div>`;
+    html += `<div style="background:#f0f8ff;border-left:3px solid #64b5f6;border-radius:0 6px 6px 0;padding:10px 14px;font-size:12px;line-height:1.9;color:#1c3150">${fmt(content).replace(/\n/g,'<br>')}</div></div>`;
+    speechBuf = ''; speechNote = '';
+  }
+
+  function flushTable() {
+    if (!tableRows.length) return;
+    const rows = tableRows.filter(r => !/^\|[-:\s|]+\|$/.test(r));
+    html += '<div style="overflow-x:auto;margin:10px 0"><table style="width:100%;border-collapse:collapse;font-size:11px">';
+    rows.forEach((row, i) => {
+      const cells = row.split('|').slice(1,-1);
+      const tag = i===0 ? 'th' : 'td';
+      const bg  = i===0 ? '#e8eaf6' : (i%2===1 ? '#fafafa' : '#fff');
+      html += '<tr>' + cells.map(c => `<${tag} style="border:1px solid #d0d7de;padding:5px 8px;background:${bg};${i===0?'font-weight:600;color:#3949ab':''}">${fmt(c.trim())}</${tag}>`).join('') + '</tr>';
+    });
+    html += '</table></div>';
+    tableRows = [];
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const t = line.trim();
+
+    if (t.startsWith('|')) {
+      if (state === 'speech') { flushSpeech(); state = 'normal'; }
+      if (state === 'sticky') { html += '</div>'; state = 'normal'; }
+      tableRows.push(t);
+      continue;
+    } else { flushTable(); }
+
+    if (state === 'speech') {
+      speechBuf += '\n' + line;
+      if (t.endsWith('」')) { flushSpeech(); state = 'normal'; }
+      continue;
+    }
+
+    if (state === 'sticky') {
+      if (t === '') { html += '</div>'; state = 'normal'; continue; }
+      const bm = t.match(/^- (.+)$/);
+      if (bm) {
+        const pts = bm[1].split('：');
+        const label = pts.length >= 2 ? `<span style="font-weight:600;color:#5d4037">${esc(pts[0])}：</span>${fmt(pts.slice(1).join('：'))}` : fmt(bm[1]);
+        html += `<div style="font-size:12px;margin:5px 0;line-height:1.6">・${label}</div>`;
+      } else {
+        html += `<div style="font-size:12px;margin:3px 0">${fmt(t)}</div>`;
+      }
+      continue;
+    }
+
+    // 事前メモ
+    if (t === '【事前メモ｜面談者確認用】') {
+      state = 'sticky';
+      html += `<div style="background:#fffde7;border:1px solid #ffe082;border-radius:8px;padding:12px 16px;margin:10px 0 16px;box-shadow:2px 3px 6px rgba(0,0,0,0.08)">
+        <div style="font-size:10px;font-weight:700;color:#f57f17;letter-spacing:.5px;margin-bottom:8px">📌 事前メモ <span style="color:#bbb;font-weight:400">｜面談者確認用</span></div>`;
+      continue;
+    }
+
+    // セクションヘッダー ① ② ③ ④
+    const sm = t.match(/^([①②③④]) (.+)$/);
+    if (sm) {
+      const sc = SEC[sm[1]] || {c:'#37474f', bg:'#f5f5f5'};
+      secCount++;
+      if (secCount > 1) html += `<hr style="border:none;border-top:1px solid #eaeef2;margin:18px 0 0">`;
+      html += `<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;padding:10px 14px;background:${sc.bg};border-radius:6px;border-left:4px solid ${sc.c}">
+        <span style="background:${sc.c};color:#fff;border-radius:50%;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${sm[1]}</span>
+        <span style="font-weight:700;color:${sc.c};font-size:13px">${esc(sm[2])}</span></div>`;
+      continue;
+    }
+
+    // 【質問N｜テーマ】 / 【確認N｜テーマ】
+    const qm = t.match(/^【(質問|確認)(\d+)｜(.+)】$/);
+    if (qm) {
+      const isQ = qm[1]==='質問';
+      const c = isQ ? '#0277bd' : '#6a1b9a', bg = isQ ? '#e1f5fe' : '#f3e5f5';
+      html += `<div style="display:inline-flex;align-items:center;gap:6px;background:${bg};border-radius:4px;padding:4px 10px;margin:12px 0 5px;font-size:11px;font-weight:700;color:${c}">
+        <span style="background:${c};color:#fff;border-radius:3px;padding:1px 6px;font-size:10px">${esc(qm[1])}${qm[2]}</span>
+        <span>${esc(qm[3])}</span></div><br>`;
+      continue;
+    }
+
+    // 【面談後チェックリスト】
+    const cm = t.match(/^【面談後チェックリスト｜(.+)】$/);
+    if (cm) {
+      html += `<hr style="border:none;border-top:1px solid #eaeef2;margin:18px 0 14px">
+        <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#37474f;font-size:12px;margin-bottom:8px;padding:8px 12px;background:#eceff1;border-radius:6px;border-left:4px solid #607d8b">📋 面談後チェックリスト <span style="color:#90a4ae;font-weight:400;font-size:11px">｜${esc(cm[1])}</span></div>`;
+      continue;
+    }
+
+    // *（note）*「speech」 同一行
+    const nsm = t.match(/^\*（(.+?)）\*「(.*)$/);
+    if (nsm) {
+      const rest = nsm[2];
+      if (rest.endsWith('」')) {
+        html += `<div style="margin:6px 0"><div style="color:#8c959f;font-size:10px;font-style:italic;margin-bottom:3px">（${esc(nsm[1])}）</div><div style="background:#f0f8ff;border-left:3px solid #64b5f6;border-radius:0 6px 6px 0;padding:10px 14px;font-size:12px;line-height:1.9;color:#1c3150">${fmt(rest.slice(0,-1))}</div></div>`;
+      } else { speechNote = nsm[1]; speechBuf = '「' + rest; state = 'speech'; }
+      continue;
+    }
+
+    // *（note）* 単独
+    const nm = t.match(/^\*（(.+?)）\*$/);
+    if (nm) { html += `<div style="color:#8c959f;font-size:10px;font-style:italic;margin:6px 0 3px;padding-left:2px">（${esc(nm[1])}）</div>`; continue; }
+
+    // 「speech」
+    if (t.startsWith('「')) {
+      if (t.endsWith('」')) {
+        html += `<div style="background:#f0f8ff;border-left:3px solid #64b5f6;border-radius:0 6px 6px 0;padding:10px 14px;font-size:12px;line-height:1.9;color:#1c3150;margin:6px 0">${fmt(t.slice(1,-1))}</div>`;
+      } else { speechBuf = t; state = 'speech'; }
+      continue;
+    }
+
+    // サブタイトル
+    if (/^面談スクリプト｜.+様$/.test(t)) {
+      html += `<div style="font-size:13px;font-weight:600;color:#24292f;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #d0d7de">${esc(t)}</div>`;
+      continue;
+    }
+
+    // 総合所見・次アクション
+    if (t.startsWith('総合所見：') || t.startsWith('次アクション')) {
+      html += `<div style="font-size:12px;color:#24292f;margin:5px 0;line-height:1.6">${fmt(t)}</div>`;
+      continue;
+    }
+
+    // ## / ### ヘッダー
+    const hm = t.match(/^(#{1,3}) (.+)$/);
+    if (hm) {
+      const sz = hm[1].length === 1 ? '14px' : hm[1].length === 2 ? '13px' : '12px';
+      html += `<div style="font-size:${sz};font-weight:700;color:#24292f;margin:10px 0 4px">${fmt(hm[2])}</div>`;
+      continue;
+    }
+
+    // --- 薄い横線
+    if (t === '---') {
+      html += `<hr style="border:none;border-top:1px solid #eaeef2;margin:10px 0">`;
+      continue;
+    }
+
+    if (t === '') { html += '<div style="height:4px"></div>'; continue; }
+
+    html += `<div style="font-size:12px;color:#444;line-height:1.7;margin:2px 0">${fmt(t)}</div>`;
+  }
+
+  if (state === 'speech') flushSpeech();
+  if (state === 'sticky') html += '</div>';
+  flushTable();
+  return html;
+}
+
 function renderMd(raw) {
   let text = raw
     .replace(/緒方さん/g, "社員")
@@ -1649,7 +1821,7 @@ function showDocDetail(docId, field, label) {
   document.getElementById("dm-title").textContent = `${label} - ${doc.name || ""}`;
   const body = document.getElementById("dm-body");
   body.style.whiteSpace = "normal";
-  body.innerHTML = renderMd(raw);
+  body.innerHTML = field === "interviewPrepContent" ? renderInterviewPrep(raw) : renderMd(raw);
   const dateArea = document.getElementById("dm-interview-date-area");
   if (field === "interviewPrepContent") {
     dmInterviewDocId = docId;
