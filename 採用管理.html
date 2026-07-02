@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>CX採用管理</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body { background: #f6f8fa; color: #24292f; font-family: -apple-system, 'Helvetica Neue', sans-serif; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+
+.header { background: #fff; border-bottom: 1px solid #d0d7de; padding: 11px 24px; display: flex; align-items: center; gap: 10px; }
+.header h1 { font-size: 15px; font-weight: 600; }
+.header-btns { margin-left: auto; display: flex; gap: 8px; }
+.hbtn { background: #f6f8fa; border: 1px solid #d0d7de; color: #57606a; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.hbtn:hover { background: #eaeef2; }
+
+/* ダッシュボード */
+.dash-bar { display: flex; align-items: center; gap: 8px; padding: 8px 24px 0; justify-content: flex-end; }
+.dashboard { display: flex; gap: 8px; padding: 8px 24px 10px; flex-wrap: wrap; }
+.sc { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 8px 14px; min-width: 100px; flex: 1; text-align: center; }
+.sc .l { font-size: 10px; color: #57606a; margin-bottom: 2px; }
+.sc .n { font-size: 20px; font-weight: 700; color: #0969da; }
+.sc.g .n { color: #1a7f37; } .sc.o .n { color: #9a6700; }
+.sc.p .n { color: #8250df; } .sc.r .n { color: #cf222e; }
+
+#top-fixed { flex-shrink: 0; background: #f6f8fa; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
+.tabs { display: flex; padding: 0 24px; border-bottom: 1px solid #d0d7de; background: #fff; }
+.tab-btn { padding: 9px 16px; background: none; border: none; color: #57606a; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab-btn.active { color: #0969da; border-bottom-color: #0969da; font-weight: 500; }
+.tab-btn:hover:not(.active) { color: #24292f; }
+
+.content { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; padding: 0 24px; }
+.view-toggle { display: inline-flex; }
+.vbtn { padding: 5px 14px; background: #f6f8fa; border: 1px solid #d0d7de; color: #57606a; cursor: pointer; font-size: 12px; font-weight: 500; }
+.vbtn:first-child { border-radius: 6px 0 0 6px; }
+.vbtn:last-child  { border-radius: 0 6px 6px 0; border-left: none; }
+.vbtn.active { background: #0969da; border-color: #0969da; color: #fff; }
+
+/* 書類選考カード */
+.sc-grid { display: flex; flex-direction: column; gap: 8px; }
+.ccard { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 12px 16px; }
+.ccard-h { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.cname { font-size: 14px; font-weight: 600; }
+.rbadge { font-size: 11px; background: #f6f8fa; border: 1px solid #d0d7de; padding: 2px 6px; border-radius: 4px; color: #57606a; }
+.jbadge { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 5px; }
+.jA { background: #dafbe1; color: #1a7f37; } .jB { background: #fff8c5; color: #9a6700; } .jC { background: #ffebe9; color: #cf222e; }
+.sc-result { font-size: 11px; color: #57606a; line-height: 1.7; white-space: pre-wrap; background: #f6f8fa; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; max-height: 120px; overflow-y: auto; border: 1px solid #eaeef2; }
+.ca { display: flex; gap: 8px; }
+
+/* ボタン */
+.btn { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 500; }
+.btn-g { background: #2da44e; color: #fff; } .btn-g:hover { background: #218a3e; }
+.btn-r { background: #cf222e; color: #fff; } .btn-r:hover { background: #a40e26; }
+.btn-b { background: #0969da; color: #fff; } .btn-b:hover { background: #0550ae; }
+.btn-x { background: #f6f8fa; color: #57606a; border: 1px solid #d0d7de; } .btn-x:hover { background: #eaeef2; }
+.btn-sm { padding: 3px 8px; font-size: 11px; }
+
+/* テーブル */
+.tw { flex: 1; min-height: 0; overflow: auto; }
+.pt { width: 100%; border-collapse: separate; border-spacing: 0; }
+.pt th { text-align: left; padding: 7px 10px; font-size: 11px; color: #57606a; font-weight: 600; background: #f6f8fa; white-space: nowrap; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 0 #d0d7de; }
+.pt td { padding: 8px 10px; border-bottom: 1px solid #eaeef2; font-size: 12px; vertical-align: middle; }
+
+/* タブコンテンツ flex設定 */
+#tab-hire, #tab-train, #tab-dropout, #tab-rej, #tab-dbt { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#tab-train, #tab-dropout, #tab-rej, #tab-dbt { padding-top: 10px; }
+#hire-subbar { flex-shrink: 0; }
+#hire-sc, #hire-pgrec { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#pg-tw { flex: 1; min-height: 0; }
+.pt tr:hover td { background: #fafbfc; }
+.nc { font-weight: 600; color: #24292f; font-size: 13px; white-space: nowrap; }
+
+/* バッジトリガー */
+.sb { display: inline-block; padding: 3px 9px; border-radius: 11px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.bsel-trigger { cursor: pointer; display: inline-flex; align-items: center; gap: 3px; user-select: none; }
+.bsel-trigger:hover { opacity: 0.85; }
+
+/* グローバルドロップダウン */
+#gdd {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+  min-width: fit-content;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.gdd-item { padding: 4px 6px; cursor: pointer; border-radius: 5px; }
+.gdd-item:hover { background: #f6f8fa; }
+
+/* メモ入力 */
+.ni { background: #f6f8fa; border: 1px solid #d0d7de; color: #24292f; padding: 3px 7px; border-radius: 5px; font-size: 11px; width: 160px; }
+.ni:focus { outline: none; border-color: #0969da; }
+
+/* 見送りフィルター */
+.rej-filter-btn { padding: 4px 14px; border-radius: 20px; border: 1px solid #d0d7de; background: #f6f8fa; color: #57606a; font-size: 12px; cursor: pointer; font-weight: 500; }
+.rej-filter-btn.active { background: #0969da; color: #fff; border-color: #0969da; }
+/* ソートボタン */
+.sort-btn { cursor: pointer; font-size: 10px; color: #b0b8c1; margin-left: 3px; user-select: none; }
+.sort-btn.active { color: #0969da; }
+/* 採用チェック */
+.hire-chk { border: 1.5px solid #d0d7de; background: #f6f8fa; color: #8c959f; padding: 3px 8px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: 500; white-space: nowrap; }
+.hire-chk:hover { border-color: #1a7f37; color: #1a7f37; background: #dafbe1; }
+.hire-chk.checked { border-color: #1a7f37; background: #dafbe1; color: #1a7f37; font-weight: 700; }
+.section-divider td { background: #f0fff4; border-top: 2px solid #2da44e; border-bottom: 2px solid #2da44e; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #1a7f37; }
+/* タブ遷移アクションボタン */
+.act-btn { padding: 3px 8px; border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: 500; border: 1px solid; white-space: nowrap; background: #f6f8fa; }
+.act-btn-rej    { color: #8c959f; border-color: #d0d7de; }
+.act-btn-rej:hover    { background: #ffebe9; color: #cf222e; border-color: #cf222e; }
+.act-btn-dropout { color: #8c959f; border-color: #d0d7de; }
+.act-btn-dropout:hover { background: #fff1e0; color: #953800; border-color: #953800; }
+.act-btn-debut  { color: #8c959f; border-color: #d0d7de; }
+.act-btn-debut:hover  { background: #dafbe1; color: #1a7f37; border-color: #1a7f37; }
+
+/* ステータス管理モーダルタブ */
+.mgr-tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 14px; }
+.mgr-tab { padding: 5px 10px; background: #f6f8fa; border: 1px solid #d0d7de; color: #57606a; cursor: pointer; font-size: 11px; font-weight: 500; border-left: none; }
+.mgr-tab:first-child { border-left: 1px solid #d0d7de; border-radius: 6px 0 0 6px; }
+.mgr-tab:last-child  { border-radius: 0 6px 6px 0; }
+.mgr-tab.active { background: #0969da; border-color: #0969da; color: #fff; }
+.status-item-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eaeef2; }
+.drag-handle { cursor: grab; color: #ccc; font-size: 15px; padding: 0 2px; user-select: none; flex-shrink: 0; }
+.drag-handle:active { cursor: grabbing; }
+.status-item-row.drag-over { border-top: 2px solid #0969da; }
+.color-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0; cursor: pointer; }
+.sname-input { flex: 1; background: #f6f8fa; border: 1px solid #d0d7de; padding: 4px 7px; border-radius: 5px; font-size: 12px; }
+.color-opts { display: flex; gap: 4px; flex-wrap: wrap; }
+.color-opt { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+.color-opt.selected { border-color: #24292f; }
+
+/* ステータス管理モーダル固定レイアウト */
+#status-modal .modal { height: 580px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+#mgr-content { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.mgr-list { flex: 1; overflow-y: auto; min-height: 0; }
+.mgr-add  { flex-shrink: 0; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eaeef2; }
+
+/* 汎用モーダル */
+.modal-ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+.modal-ov.show { display: flex; }
+.modal { background: #fff; border: 1px solid #d0d7de; border-radius: 12px; padding: 22px; max-width: 680px; width: 90%; max-height: 82vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.modal h2 { color: #24292f; font-size: 14px; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid #eaeef2; padding-bottom: 8px; }
+.mf { margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px; }
+
+.month-sel { background: #f6f8fa; border: 1px solid #d0d7de; color: #24292f; padding: 4px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.empty { text-align: center; padding: 40px 0; color: #8c959f; font-size: 13px; }
+.loading { text-align: center; padding: 36px 0; color: #8c959f; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- グローバルドロップダウン -->
+<div id="gdd"></div>
+
+<div id="top-fixed">
+<div class="header">
+  <h1>🏢 CX採用管理</h1>
+  <div class="header-btns">
+    <button class="hbtn" onclick="openAddCandidate()" style="background:#2da44e;color:#fff;border-color:#2da44e">+ 新規追加</button>
+    <button class="hbtn" onclick="openStatusMgr()">⚙ ステータス管理</button>
+    <button class="hbtn" onclick="loadData()">↻ 更新</button>
+  </div>
+</div>
+
+<!-- ダッシュボード切り替え -->
+<div class="dash-bar">
+  <div class="view-toggle">
+    <button class="vbtn" id="dash-all" onclick="switchDash('all')">全体</button>
+    <button class="vbtn active" id="dash-month" onclick="switchDash('month')">月別</button>
+  </div>
+  <select class="month-sel" id="month-sel" onchange="onMonthChange()"></select>
+  <button class="hbtn" onclick="showTrend()">推移を見る</button>
+</div>
+
+<div class="dashboard">
+  <div class="sc"><div class="l">母集団</div><div class="n" id="st-total">-</div></div>
+  <div class="sc o"><div class="l">面談数</div><div class="n" id="st-interview">-</div></div>
+  <div class="sc g"><div class="l">契約数</div><div class="n" id="st-contract">-</div></div>
+  <div class="sc p"><div class="l">座学突破</div><div class="n" id="st-training">-</div></div>
+  <div class="sc r"><div class="l">デビュー済み</div><div class="n" id="st-debut">-</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tb-hire"    onclick="showTab('hire')">採用管理<span id="sc-badge"></span></button>
+  <button class="tab-btn"        id="tb-train"   onclick="showTab('train')">研修管理</button>
+  <button class="tab-btn"        id="tb-dropout" onclick="showTab('dropout')">離脱</button>
+  <button class="tab-btn"        id="tb-rej"     onclick="showTab('rej')">見送り</button>
+  <button class="tab-btn"        id="tb-dbt"     onclick="showTab('dbt')">デビュー済み<span id="dbt-badge"></span></button>
+</div>
+</div>
+
+<div class="content">
+
+  <!-- 採用管理 -->
+  <div id="tab-hire">
+    <div id="hire-subbar" style="background:#f6f8fa;padding:8px 0 6px">
+      <div class="view-toggle">
+        <button class="vbtn active" id="stb-sc"    onclick="showHireSubTab('sc')">書類選考</button>
+        <button class="vbtn"        id="stb-pgrec" onclick="showHireSubTab('pgrec')">採用フロー</button>
+      </div>
+    </div>
+    <!-- 書類選考 -->
+    <div id="hire-sc">
+      <div class="loading" id="ld-sc">読み込み中...</div>
+      <div class="sc-grid" id="sc-list"></div>
+    </div>
+    <!-- 採用フロー -->
+    <div id="hire-pgrec" style="display:none">
+      <div class="loading" id="ld-pg">読み込み中...</div>
+      <div class="tw" id="pg-tw"><table class="pt"><thead id="pg-head"></thead><tbody id="pg-body"></tbody></table></div>
+      <div class="empty" id="pg-empty" style="display:none">対象の候補者がいません</div>
+    </div>
+  </div>
+
+  <!-- 研修管理 -->
+  <div id="tab-train" style="display:none">
+    <div class="loading" id="ld-tr">読み込み中...</div>
+    <div class="tw" id="tr-tw"><table class="pt"><thead id="tr-head"></thead><tbody id="tr-body"></tbody></table></div>
+    <div class="empty" id="tr-empty" style="display:none">対象の候補者がいません</div>
+  </div>
+
+  <!-- 離脱 -->
+  <div id="tab-dropout" style="display:none">
+    <div class="tw"><table class="pt">
+      <thead><tr><th>名前</th><th>進行状況</th><th>書類判定</th><th>採用判定</th><th>離脱理由</th><th>メモ</th><th></th></tr></thead>
+      <tbody id="dropout-body"></tbody>
+    </table></div>
+    <div class="empty" id="dropout-empty" style="display:none">離脱者はいません</div>
+  </div>
+
+  <!-- デビュー済み -->
+  <div id="tab-dbt" style="display:none">
+    <div class="tw"><table class="pt">
+      <thead><tr><th>名前</th><th>進行状況</th><th>オンライン研修</th><th><span onclick="openOralTest()" style="cursor:pointer;color:#0969da">口頭テスト</span></th><th><span onclick="openRoleplayTest()" style="cursor:pointer;color:#0969da">ロープレテスト</span></th><th>デビュー日</th><th>メモ</th></tr></thead>
+      <tbody id="dbt-body"></tbody>
+    </table></div>
+    <div class="empty" id="dbt-empty" style="display:none">デビュー済みの方はいません</div>
+  </div>
+
+  <!-- 見送り -->
+  <div id="tab-rej" style="display:none">
+    <div style="margin-bottom:8px;flex-shrink:0;display:flex;gap:6px;padding-top:2px">
+      <button id="rej-f-all" class="rej-filter-btn active" onclick="setRejFilter('all')">すべて</button>
+      <button id="rej-f-sc"  class="rej-filter-btn"        onclick="setRejFilter('sc')">書類選考後</button>
+      <button id="rej-f-pg"  class="rej-filter-btn"        onclick="setRejFilter('pg')">面談選考後</button>
+    </div>
+    <div class="tw"><table class="pt">
+      <thead id="rej-head"></thead>
+      <tbody id="rej-body"></tbody>
+    </table></div>
+    <div class="empty" id="rej-empty" style="display:none">なし</div>
+  </div>
+
+</div>
+
+<!-- 新規追加モーダル -->
+<div class="modal-ov" id="add-modal" onclick="closeMod('add-modal',event)">
+  <div class="modal" style="max-width:380px">
+    <h2>+ 候補者を追加</h2>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">表示名（本名）<span style="color:#cf222e">*</span></label>
+      <input id="add-name" placeholder="例：山田 花子" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">CW・プラットフォーム名</label>
+      <input id="add-alias" placeholder="例：hanako_yamada" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">経路</label>
+      <input id="add-route" placeholder="例：クラウドワークス" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">応募日</label>
+      <input id="add-screeningAt" type="date" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>
+    <div class="mf" style="flex-direction:column;gap:8px;align-items:stretch">
+      <button class="btn btn-b" onclick="addCandidateScreening()" style="text-align:center">📋 書類選考をする（採用管理＞書類選考へ）</button>
+      <button class="btn btn-g" onclick="addCandidateLater()" style="text-align:center">⏭ 後でやる（採用管理＞採用フローへ）</button>
+      <button class="btn btn-x" onclick="document.getElementById('add-modal').classList.remove('show')" style="text-align:center">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 書類判定手入力モーダル -->
+<div class="modal-ov" id="screening-modal" onclick="closeMod('screening-modal',event)">
+  <div class="modal" style="max-width:360px">
+    <h2 id="screening-modal-title">書類判定</h2>
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:6px">判定</label>
+      <div style="display:flex;gap:8px">
+        <button id="sj-A" class="btn" style="flex:1;font-weight:700" onclick="selectJudgment('A')">A</button>
+        <button id="sj-B" class="btn" style="flex:1;font-weight:700" onclick="selectJudgment('B')">B</button>
+        <button id="sj-C" class="btn" style="flex:1;font-weight:700" onclick="selectJudgment('C')">C</button>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">スコア（点）</label>
+      <input id="sj-score" type="number" min="0" max="20" value="0" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:80px">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">コメント（任意）</label>
+      <textarea id="sj-comment" rows="4" placeholder="選考メモ..." style="border:1px solid #d0d7de;border-radius:5px;padding:6px 8px;font-size:12px;width:100%;box-sizing:border-box;resize:vertical"></textarea>
+    </div>
+    <div class="mf">
+      <button class="btn btn-x" onclick="document.getElementById('screening-modal').classList.remove('show')">キャンセル</button>
+      <button class="btn btn-g" onclick="saveManualScreening()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="modal-ov" id="detail-modal" onclick="closeMod('detail-modal',event)">
+  <div class="modal">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
+      <h2 id="dm-title" style="margin:0;flex:1"></h2>
+      <div id="dm-interview-date-area" style="display:none;flex-shrink:0;font-size:11px;color:#57606a;padding-top:4px">
+        面談日：<input type="date" id="dm-interview-date" onchange="saveDmInterviewDate()" style="border:1px solid #d0d7de;border-radius:5px;padding:3px 6px;font-size:11px">
+      </div>
+    </div>
+    <div id="dm-body" style="font-size:12px;line-height:1.9"></div>
+    <div class="mf"><button class="btn btn-x" onclick="document.getElementById('detail-modal').classList.remove('show')">閉じる</button></div>
+  </div>
+</div>
+
+<!-- オンライン研修メモモーダル -->
+<div class="modal-ov" id="online-memo-modal" onclick="closeMod('online-memo-modal',event)">
+  <div class="modal" style="max-width:520px">
+    <h2 id="omm-title"></h2>
+    <div style="margin-bottom:10px">
+      <textarea id="omm-body" rows="12" placeholder="メモを入力..."
+                style="width:100%;box-sizing:border-box;border:1px solid #d0d7de;border-radius:5px;padding:8px;font-size:12px;line-height:1.7;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="mf">
+      <button class="btn btn-x" onclick="document.getElementById('online-memo-modal').classList.remove('show')">閉じる</button>
+      <button class="btn btn-b" onclick="saveOnlineMemo()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- マイルストーン日付編集モーダル -->
+<div class="modal-ov" id="milestone-modal" onclick="closeMod('milestone-modal',event)">
+  <div class="modal" style="max-width:380px">
+    <h2 id="ms-title"></h2>
+    <div id="ms-fields"></div>
+    <div class="mf" style="justify-content:space-between">
+      <button class="btn btn-r" onclick="deleteCandidate()">削除</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-x" onclick="document.getElementById('milestone-modal').classList.remove('show')">キャンセル</button>
+        <button class="btn btn-g" onclick="saveMilestones()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理設定モーダル -->
+<div class="modal-ov" id="status-modal" onclick="closeMod('status-modal',event)">
+  <div class="modal" style="max-width:520px">
+    <h2>⚙ ステータス管理</h2>
+    <div class="mgr-tabs">
+      <button class="mgr-tab active" id="mgr-tab-status" onclick="switchMgrTab('status')">進行状況</button>
+      <button class="mgr-tab" id="mgr-tab-online"  onclick="switchMgrTab('online')">オンライン研修</button>
+      <button class="mgr-tab" id="mgr-tab-test"    onclick="switchMgrTab('test')">口頭テスト</button>
+      <button class="mgr-tab" id="mgr-tab-rp"      onclick="switchMgrTab('rp')">ロープレテスト</button>
+    </div>
+    <div id="mgr-content"></div>
+    <div class="mf"><button class="btn btn-x" onclick="document.getElementById('status-modal').classList.remove('show')">閉じる</button></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyAvFkJ4-Vu1c9nYooOwARYlLX1nMFePEB8",
+  authDomain: "saiten-tool.firebaseapp.com",
+  projectId: "saiten-tool",
+  storageBucket: "saiten-tool.firebasestorage.app",
+  messagingSenderId: "255406288187",
+  appId: "1:255406288187:web:cd4fae45815531e0ad1b1e"
+});
+const db = firebase.firestore();
+const COL = "recruitment";
+let allDocs = [];
+let unsubRecruitment = null;
+let hireSubTab = 'sc';
+let dashMode = "month";
+let selectedMonth = new Date().toISOString().slice(0, 7);
+let currentMgrTab = "status";
+let milestoneDocId = null;
+let selectedColorIdx = 0;
+let colorPickerForIdx = null;
+let gddDocId = null, gddField = null;
+let dmInterviewDocId = null;
+let onlineTrainingMemo = "";
+let selectedFieldColorIdx = 0;
+let fieldColorPickerForKey = null, fieldColorPickerForIdx = null;
+
+const DEFAULT_STATUS_VALUES = [
+  "debuted","training","contracted","contract_pending","contracted_vbo",
+  "interview_ready","interview_pending","interview_scheduled","interview_scheduling","rejected"
+];
+
+let STATUS_LIST = [
+  { value: "debuted",              label: "デビュー済み",    bg: "#d1fae5", color: "#065f46", tabs: [] },
+  { value: "training",             label: "座学突破",         bg: "#fef9c3", color: "#7d4e00", tabs: ["training"] },
+  { value: "contracted",           label: "ContractS済",      bg: "#dafbe1", color: "#1a7f37", tabs: ["recruit","training"] },
+  { value: "contract_pending",     label: "ContractS待ち",    bg: "#e0f2fe", color: "#0369a1", tabs: ["recruit","training"] },
+  { value: "contracted_vbo",       label: "vboに申請中",      bg: "#eae6ff", color: "#6b3da8", tabs: ["recruit","training"] },
+  { value: "interview_ready",      label: "面談準備完了",     bg: "#ddf4ff", color: "#0550ae", tabs: ["recruit"] },
+  { value: "interview_pending",    label: "面談準備待ち",     bg: "#fff8c5", color: "#9a6700", tabs: ["recruit"] },
+  { value: "interview_scheduled",  label: "面談日程調整完了", bg: "#dcffe4", color: "#1a7f37", tabs: ["recruit"] },
+  { value: "interview_scheduling", label: "面接日程調整中",   bg: "#fff1e0", color: "#953800", tabs: ["recruit"] },
+  { value: "dropout",              label: "離脱",             bg: "#fff1e0", color: "#953800", tabs: [] },
+  { value: "rejected",             label: "不採用",           bg: "#f1f1f1", color: "#8c959f", tabs: [] },
+];
+
+let gddStatusContext = null; // 'recruit' | 'training' | null
+
+function statusToTab(status) {
+  if (status === "rejected") return "rej";
+  if (status === "dropout")  return "dropout";
+  if (status === "debuted")  return "dbt";
+  if (status === "training") return "train";
+  return "hire";
+}
+
+let FIELD_OPTS = {
+  trainingOnline:   [
+    { label: "未実施",       bg: "#f1f1f1", color: "#8c959f" },
+    { label: "日程調整中",   bg: "#fff8c5", color: "#9a6700" },
+    { label: "日程調整完了", bg: "#ddf4ff", color: "#0550ae" },
+    { label: "実施済み",     bg: "#dafbe1", color: "#1a7f37" },
+  ],
+  trainingTest: [
+    { label: "未実施", bg: "#f1f1f1", color: "#8c959f" },
+    { label: "合格",   bg: "#dafbe1", color: "#1a7f37" },
+    { label: "不合格", bg: "#ffebe9", color: "#cf222e" },
+  ],
+  trainingRoleplay: [
+    { label: "未実施",       bg: "#f1f1f1", color: "#8c959f" },
+    { label: "日程調整中",   bg: "#fff8c5", color: "#9a6700" },
+    { label: "日程調整完了", bg: "#ddf4ff", color: "#0550ae" },
+    { label: "実施済み",     bg: "#dafbe1", color: "#1a7f37" },
+  ],
+  debutStatus: [
+    { label: "未定", bg: "#f1f1f1", color: "#8c959f" },
+    { label: "可",   bg: "#dafbe1", color: "#1a7f37" },
+    { label: "不可", bg: "#ffebe9", color: "#cf222e" },
+  ],
+};
+
+const PRESET_COLORS = [
+  { bg: "#dafbe1", color: "#1a7f37" }, { bg: "#d1fae5", color: "#065f46" },
+  { bg: "#ddf4ff", color: "#0550ae" }, { bg: "#e0f2fe", color: "#0369a1" },
+  { bg: "#fff8c5", color: "#9a6700" }, { bg: "#fef9c3", color: "#7d4e00" },
+  { bg: "#fff1e0", color: "#953800" }, { bg: "#ffebe9", color: "#cf222e" },
+  { bg: "#eae6ff", color: "#6b3da8" }, { bg: "#dcffe4", color: "#1a7f37" },
+  { bg: "#f1f1f1", color: "#8c959f" }, { bg: "#e8eaf6", color: "#3949ab" },
+];
+
+// ── ヘルパー ────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function statusDef(v) {
+  return STATUS_LIST.find(s => s.value === v) || { label: v||"-", bg: "#f1f1f1", color: "#8c959f" };
+}
+function statusIdx(v) {
+  const i = STATUS_LIST.findIndex(s => s.value === v);
+  return i === -1 ? 99 : i;
+}
+function getTrainingColor(val) {
+  if (!val) return { bg: "#f1f1f1", color: "#8c959f" };
+  if (["実施済み","合格","可"].includes(val))   return { bg: "#dafbe1", color: "#1a7f37" };
+  if (["日程調整完了"].includes(val))            return { bg: "#ddf4ff", color: "#0550ae" };
+  if (["日程調整中"].includes(val))              return { bg: "#fff8c5", color: "#9a6700" };
+  if (["不合格","不可"].includes(val))           return { bg: "#ffebe9", color: "#cf222e" };
+  return { bg: "#f1f1f1", color: "#8c959f" };
+}
+function getMonth(v) { return v ? String(v).substring(0, 7) : ""; }
+function today() { return new Date().toISOString().slice(0, 10); }
+
+// ── データ読み込み ────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const [statusDoc, fieldOptDoc, memosDoc] = await Promise.all([
+      db.collection("recruitment_settings").doc("statuses").get(),
+      db.collection("recruitment_settings").doc("fieldOptions").get(),
+      db.collection("recruitment_settings").doc("memos").get(),
+    ]);
+    if (memosDoc.exists) onlineTrainingMemo = memosDoc.data().onlineTraining || "";
+
+    if (statusDoc.exists) {
+      const data = statusDoc.data();
+      if (data.statusList && data.statusList.length > 0) {
+        STATUS_LIST = data.statusList;
+        // dropout は新規追加なので Firebase になければ補完
+        if (!STATUS_LIST.find(s => s.value === "dropout")) {
+          const rejIdx = STATUS_LIST.findIndex(s => s.value === "rejected");
+          STATUS_LIST.splice(rejIdx >= 0 ? rejIdx : STATUS_LIST.length, 0,
+            { value: "dropout", label: "離脱", bg: "#fff1e0", color: "#953800", tabs: [] });
+        }
+        // tabs プロパティが欠けているエントリにデフォルトを補完
+        const TABS_DEFAULTS = {
+          debuted: [], training: ["training"], dropout: [], rejected: [],
+          contracted: ["recruit","training"], contract_pending: ["recruit","training"], contracted_vbo: ["recruit","training"],
+          interview_ready: ["recruit"], interview_pending: ["recruit"],
+          interview_scheduled: ["recruit"], interview_scheduling: ["recruit"],
+        };
+        STATUS_LIST.forEach(s => {
+          if (!s.tabs) s.tabs = TABS_DEFAULTS[s.value] || ["recruit"];
+        });
+      } else if (data.custom) {
+        // 旧フォーマット互換
+        const rejIdx = STATUS_LIST.findIndex(s => s.value === "rejected");
+        (data.custom || []).forEach(c => {
+          if (!STATUS_LIST.find(s => s.value === c.value))
+            STATUS_LIST.splice(rejIdx, 0, c);
+        });
+      }
+    }
+    if (fieldOptDoc.exists) {
+      const fo = fieldOptDoc.data();
+      ["trainingOnline","trainingTest","trainingRoleplay","debutStatus"].forEach(key => {
+        if (fo[key] && fo[key].length > 0) {
+          if (typeof fo[key][0] === "string") {
+            // 旧フォーマット（文字列配列）→ オブジェクトに変換
+            FIELD_OPTS[key] = fo[key].map(label => {
+              const tc = getTrainingColor(label);
+              return { label, bg: tc.bg, color: tc.color };
+            });
+          } else {
+            FIELD_OPTS[key] = fo[key];
+          }
+        }
+      });
+    }
+
+    // リアルタイムリスナー（既存があれば解除してから再登録）
+    if (unsubRecruitment) unsubRecruitment();
+    unsubRecruitment = db.collection(COL).onSnapshot(snap => {
+      allDocs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      renderAll();
+      buildMonthSel();
+    }, e => console.error("リアルタイム受信エラー:", e));
+
+  } catch(e) { alert("Firebase接続エラー: " + e.message); }
+}
+
+// ── ダッシュボード ────────────────────────────────────────────────────
+function switchDash(mode) {
+  dashMode = mode;
+  document.getElementById("dash-all").classList.toggle("active",   mode === "all");
+  document.getElementById("dash-month").classList.toggle("active", mode === "month");
+  const sel = document.getElementById("month-sel");
+  sel.style.display = mode === "month" ? "inline-block" : "none";
+  if (mode === "month") buildMonthSel();
+  renderDashboard(allDocs);
+}
+function onMonthChange() {
+  selectedMonth = document.getElementById("month-sel").value;
+  renderDashboard(allDocs);
+}
+function buildMonthSel() {
+  const months = new Set();
+  allDocs.forEach(d => {
+    ["screeningAt","interviewAt","hiredAt","trainingStartAt","debutAt"].forEach(k => {
+      const m = getMonth(d[k]);
+      if (m) months.add(m);
+    });
+  });
+  const sorted = [...months].sort().reverse();
+  if (!selectedMonth || !sorted.includes(selectedMonth)) selectedMonth = sorted[0] || "";
+  const sel = document.getElementById("month-sel");
+  sel.innerHTML = sorted.map(m => `<option value="${m}"${m===selectedMonth?" selected":""}>${m}</option>`).join("");
+}
+
+function renderDashboard(docs) {
+  let total, interview, contract, training, debut;
+  if (dashMode === "all") {
+    total    = docs.filter(d => d.screeningAt).length;
+    interview= docs.filter(d => d.interviewAt).length;
+    contract = docs.filter(d => d.hiredAt).length;
+    training = docs.filter(d => d.trainingStartAt).length;
+    debut    = docs.filter(d => d.debutAt).length;
+  } else {
+    const m = selectedMonth;
+    total    = docs.filter(d => getMonth(d.screeningAt)     === m).length;
+    interview= docs.filter(d => getMonth(d.interviewAt)     === m).length;
+    contract = docs.filter(d => getMonth(d.hiredAt)         === m).length;
+    training = docs.filter(d => getMonth(d.trainingStartAt) === m).length;
+    debut    = docs.filter(d => getMonth(d.debutAt)         === m).length;
+  }
+  document.getElementById("st-total").textContent     = total;
+  document.getElementById("st-interview").textContent = interview;
+  document.getElementById("st-contract").textContent  = contract;
+  document.getElementById("st-training").textContent  = training;
+  document.getElementById("st-debut").textContent     = debut;
+}
+
+function showTrend() {
+  const months = new Set();
+  allDocs.forEach(d => {
+    ["screeningAt","interviewAt","hiredAt","trainingStartAt","debutAt"].forEach(k => {
+      const m = getMonth(d[k]); if (m) months.add(m);
+    });
+  });
+  const sorted = [...months].sort();
+  const rows = sorted.map(m => {
+    const t = allDocs.filter(d => getMonth(d.screeningAt)     === m).length;
+    const i = allDocs.filter(d => getMonth(d.interviewAt)     === m).length;
+    const c = allDocs.filter(d => getMonth(d.hiredAt)         === m).length;
+    const tr= allDocs.filter(d => getMonth(d.trainingStartAt) === m).length;
+    const db= allDocs.filter(d => getMonth(d.debutAt)         === m).length;
+    return `<tr style="border-bottom:1px solid #eaeef2">
+      <td style="padding:7px 10px;font-weight:500">${m}</td>
+      <td style="padding:7px 10px;text-align:center">${t||"-"}</td>
+      <td style="padding:7px 10px;text-align:center">${i||"-"}</td>
+      <td style="padding:7px 10px;text-align:center">${c||"-"}</td>
+      <td style="padding:7px 10px;text-align:center">${tr||"-"}</td>
+      <td style="padding:7px 10px;text-align:center">${db||"-"}</td>
+    </tr>`;
+  }).join("");
+  document.getElementById("dm-title").textContent = "月別推移";
+  document.getElementById("dm-interview-date-area").style.display = "none";
+  dmInterviewDocId = null;
+  document.getElementById("dm-body").style.whiteSpace = "normal";
+  document.getElementById("dm-body").innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:2px solid #d0d7de;color:#57606a">
+        <th style="padding:7px 10px;text-align:left">月</th>
+        <th style="padding:7px 10px;text-align:center">母集団</th>
+        <th style="padding:7px 10px;text-align:center">面談</th>
+        <th style="padding:7px 10px;text-align:center">契約</th>
+        <th style="padding:7px 10px;text-align:center">研修</th>
+        <th style="padding:7px 10px;text-align:center">デビュー</th>
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#8c959f">データなし</td></tr>'}</tbody>
+    </table>`;
+  document.getElementById("detail-modal").classList.add("show");
+}
+
+// ── グローバルドロップダウン ──────────────────────────────────────────
+function fieldOptDef(field, label) {
+  const opts = FIELD_OPTS[field] || [];
+  return opts.find(o => o.label === label) || opts[0] || { label: label||"", bg: "#f1f1f1", color: "#8c959f" };
+}
+function makeBadgeSel(docId, field, currentVal, ctx) {
+  let badgeHtml;
+  if (field === "status" || field === "dropoutStatus") {
+    const def = statusDef(currentVal);
+    badgeHtml = `<span class="sb" style="background:${def.bg};color:${def.color}">${esc(def.label)}</span>`;
+  } else {
+    const opt = fieldOptDef(field, currentVal);
+    badgeHtml = `<span class="sb" style="background:${opt.bg};color:${opt.color}">${esc(opt.label)}</span>`;
+  }
+  const clickFn = ((field === "status" || field === "dropoutStatus") && ctx)
+    ? `openGDDCtx(event,'${esc(docId)}','${field}','${ctx}')`
+    : `openGDD(event,'${esc(docId)}','${field}')`;
+  return `<span class="bsel-trigger" onclick="${clickFn}">${badgeHtml}<span style="font-size:9px;opacity:0.5">▾</span></span>`;
+}
+
+function openGDDCtx(e, docId, field, ctx) {
+  gddStatusContext = ctx || null;
+  openGDD(e, docId, field);
+}
+
+function openGDD(e, docId, field) {
+  e.stopPropagation();
+  gddDocId = docId;
+  gddField = field;
+  const gdd = document.getElementById("gdd");
+
+  let html = "";
+  if (field === "status" || field === "dropoutStatus") {
+    const list = gddStatusContext
+      ? STATUS_LIST.filter(s => s.tabs && s.tabs.includes(gddStatusContext))
+      : STATUS_LIST;
+    html = list.map(o =>
+      `<div class="gdd-item" onclick="gddPick(event,'${o.value}')">
+         <span class="sb" style="background:${o.bg};color:${o.color}">${esc(o.label)}</span>
+       </div>`
+    ).join("");
+  } else {
+    const opts = FIELD_OPTS[field] || [];
+    html = opts.map(o => {
+      const safeLabel = String(o.label||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+      return `<div class="gdd-item" onclick="gddPick(event,'${safeLabel}')">
+                <span class="sb" style="background:${o.bg};color:${o.color}">${esc(o.label)}</span>
+              </div>`;
+    }).join("");
+  }
+  gdd.innerHTML = html;
+  positionGDD(e.currentTarget.getBoundingClientRect());
+}
+
+async function gddPick(e, value) {
+  e.stopPropagation();
+  document.getElementById("gdd").style.display = "none";
+  if (gddDocId && gddField) await updateField(gddDocId, gddField, value);
+  gddDocId = null; gddField = null; gddStatusContext = null;
+}
+
+document.addEventListener("click", () => {
+  document.getElementById("gdd").style.display = "none";
+  gddDocId = null; gddField = null; gddStatusContext = null;
+});
+
+// ── 書類選考 ─────────────────────────────────────────────────────────
+function renderScreened(docs) {
+  const screened = docs.filter(d => d.status === "screened");
+  document.getElementById("sc-badge").textContent = screened.length > 0 ? ` (${screened.length})` : "";
+  document.getElementById("ld-sc").style.display = "none";
+  const list = document.getElementById("sc-list");
+  list.innerHTML = screened.length === 0
+    ? '<div class="empty">審査待ちの候補者はいません</div>' : "";
+  screened.forEach(d => {
+    const j = d.screeningJudgment || "B";
+    const el = document.createElement("div");
+    el.className = "ccard";
+    el.innerHTML = `
+      <div class="ccard-h">
+        <span class="cname">${esc(d.name||"不明")}</span>
+        <span class="rbadge">${esc(d.route||"")}</span>
+        <span class="jbadge j${j}">${j}判定 ${d.screeningScore||0}点</span>
+      </div>
+      <div class="sc-result">${esc(d.screeningResult||"")}</div>
+      <div class="ca">
+        <button class="btn btn-g" onclick="advanceToInterview('${d._id}')">✓ 面談に進める</button>
+        <button class="btn btn-r" onclick="rejectAtScreening('${d._id}')">✗ 見送り</button>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+// ── 進捗管理 ─────────────────────────────────────────────────────────
+function updatePgStickyTops() {}
+window.addEventListener('resize', updatePgStickyTops);
+
+let pgSortCol = 'status';
+let pgSortDir = 'desc';
+let trSortCol = 'status';
+let trSortDir = 'desc';
+
+function sortTh(label, col) {
+  const isActive = pgSortCol === col;
+  const icon = isActive ? (pgSortDir === 'asc' ? '▲' : '▼') : '⇅';
+  return `<th>${label}<span class="sort-btn${isActive ? ' active' : ''}" onclick="setPgSort('${col}')">${icon}</span></th>`;
+}
+
+function pgSortVal(d, col) {
+  switch (col) {
+    case 'name':          return (d.name || '').toLowerCase();
+    case 'status':        return statusIdx(d.status);
+    case 'screening':     { const i = ['A','B','C'].indexOf(d.screeningJudgment); return i === -1 ? 99 : i; }
+    case 'interviewPrep': return d.interviewPrepContent ? 0 : 1;
+    case 'hiring':        { const i = ['A','B','C'].indexOf(d.hiringJudgment); return i === -1 ? 99 : i; }
+    case 'trainingOnline':
+    case 'trainingTest':
+    case 'trainingRoleplay': {
+      const opts = FIELD_OPTS[col] || [];
+      const i = opts.findIndex(o => o.label === d[col]);
+      return i === -1 ? 99 : i;
+    }
+    default: return 0;
+  }
+}
+
+function setPgSort(col) {
+  if (pgSortCol === col) {
+    pgSortDir = pgSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    pgSortCol = col;
+    pgSortDir = 'asc';
+  }
+  renderRecruitFlow(allDocs);
+}
+
+function sortThTr(label, col) {
+  const isActive = trSortCol === col;
+  const icon = isActive ? (trSortDir === 'asc' ? '▲' : '▼') : '⇅';
+  return `<th>${label}<span class="sort-btn${isActive ? ' active' : ''}" onclick="setTrSort('${col}')">${icon}</span></th>`;
+}
+
+function setTrSort(col) {
+  if (trSortCol === col) {
+    trSortDir = trSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    trSortCol = col;
+    trSortDir = 'asc';
+  }
+  renderTrainingFlow(allDocs);
+}
+
+function renderRecruitFlow(docs) {
+  document.getElementById("ld-pg").style.display = "none";
+  const pipeline = docs
+    .filter(d => d.status !== "screened" && d.status !== "rejected" && d.status !== "debuted" && d.status !== "dropout")
+    .sort((a, b) => {
+      const va = pgSortVal(a, pgSortCol);
+      const vb = pgSortVal(b, pgSortCol);
+      const dir = pgSortDir === 'asc' ? 1 : -1;
+      if (typeof va === 'string') return dir * va.localeCompare(vb, 'ja');
+      return dir * (va - vb);
+    });
+
+  const head = document.getElementById("pg-head");
+  const body = document.getElementById("pg-body");
+  body.innerHTML = "";
+
+  if (pipeline.length === 0) {
+    document.getElementById("pg-empty").style.display = "block"; return;
+  }
+  document.getElementById("pg-empty").style.display = "none";
+
+  head.innerHTML = `<tr>
+    ${sortTh('名前', 'name')}
+    ${sortTh('進行状況', 'status')}
+    <th>採用 / 見送り</th>
+    ${sortTh('書類判定', 'screening')}
+    ${sortTh('面談準備', 'interviewPrep')}
+    ${sortTh('採用判定', 'hiring')}
+    <th>メモ</th>
+  </tr>`;
+  requestAnimationFrame(updatePgStickyTops);
+
+  function makeRow(d) {
+    const j  = d.screeningJudgment || "";
+    const hj = d.hiringJudgment || "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
+      <td>${makeBadgeSel(d._id, "status", d.status, 'recruit')}</td>
+      <td style="white-space:nowrap">
+        <button class="hire-chk${d.hiredCheck?' checked':''}" onclick="toggleHireCheck('${d._id}',${!d.hiredCheck})">${d.hiredCheck?'✓ 採用':'採用'}</button>
+        <button class="act-btn act-btn-rej" style="margin-left:4px" onclick="setRejected('${d._id}')">見送り</button>
+      </td>
+      <td>${j ? `<span class="jbadge j${j}" ${d.screeningResult?`style="cursor:pointer" onclick="showDocDetail('${d._id}','screeningResult','書類選考')"`:''} title="${d.screeningResult?'クリックで詳細':''}">${j} ${d.screeningScore||0}点</span>` : `<span style="color:#0969da;cursor:pointer;font-size:11px;text-decoration:underline" onclick="openManualScreening('${d._id}')">+ 判定する</span>`}</td>
+      <td>${d.status==="interview_pending"
+        ? `<span class="sb" style="background:#fff8c5;color:#9a6700;font-weight:700;font-size:12px">待ち</span>`
+        : d.interviewPrepContent
+          ? `<button class="btn btn-b btn-sm" onclick="showDocDetail('${d._id}','interviewPrepContent','面談準備')">完了</button>`
+          : `<span style="color:#d0d7de;font-size:11px">-</span>`}</td>
+      <td>${hj
+        ? d.hiringEvalContent
+          ? `<button class="btn btn-b btn-sm" onclick="showDocDetail('${d._id}','hiringEvalContent','採用判定')">${esc(hj)}</button>`
+          : `<span style="font-size:11px;color:#1a7f37;font-weight:600">${esc(hj)}</span>`
+        : '<span style="color:#8c959f;font-size:11px">未実施</span>'}</td>
+      <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
+                 onblur="updateField('${d._id}','notes',this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+    return tr;
+  }
+
+  const notHired = pipeline.filter(d => !d.hiredCheck);
+  const hired    = pipeline.filter(d =>  d.hiredCheck);
+
+  notHired.forEach(d => body.appendChild(makeRow(d)));
+
+  if (hired.length > 0) {
+    const divRow = document.createElement("tr");
+    divRow.className = "section-divider";
+    divRow.innerHTML = `<td colspan="7">✓ 採用決定（${hired.length}名）</td>`;
+    body.appendChild(divRow);
+    hired.forEach(d => body.appendChild(makeRow(d)));
+  }
+}
+
+function renderTrainingFlow(docs) {
+  document.getElementById("ld-tr").style.display = "none";
+  const pipeline = docs
+    .filter(d => d.hiredCheck && d.status !== "screened" && d.status !== "rejected" && d.status !== "debuted" && d.status !== "dropout")
+    .sort((a, b) => {
+      const va = pgSortVal(a, trSortCol);
+      const vb = pgSortVal(b, trSortCol);
+      const dir = trSortDir === 'asc' ? 1 : -1;
+      if (typeof va === 'string') return dir * va.localeCompare(vb, 'ja');
+      return dir * (va - vb);
+    });
+
+  const head = document.getElementById("tr-head");
+  const body = document.getElementById("tr-body");
+  body.innerHTML = "";
+
+  if (pipeline.length === 0) {
+    document.getElementById("tr-empty").style.display = "block"; return;
+  }
+  document.getElementById("tr-empty").style.display = "none";
+
+  head.innerHTML = `<tr>
+    ${sortThTr('名前', 'name')}
+    ${sortThTr('進行状況', 'status')}
+    <th><span onclick="openOnlineMemo()" style="cursor:pointer;color:#0969da">オンライン研修</span><span class="sort-btn${trSortCol==='trainingOnline'?' active':''}" onclick="setTrSort('trainingOnline')">${trSortCol==='trainingOnline'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
+    <th><span onclick="openOralTest()" style="cursor:pointer;color:#0969da">口頭テスト</span><span class="sort-btn${trSortCol==='trainingTest'?' active':''}" onclick="setTrSort('trainingTest')">${trSortCol==='trainingTest'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
+    <th><span onclick="openRoleplayTest()" style="cursor:pointer;color:#0969da">ロープレテスト</span><span class="sort-btn${trSortCol==='trainingRoleplay'?' active':''}" onclick="setTrSort('trainingRoleplay')">${trSortCol==='trainingRoleplay'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
+    <th>メモ</th>
+    <th></th>
+  </tr>`;
+  pipeline.forEach(d => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
+      <td>${makeBadgeSel(d._id, "status",          d.status, 'training')}</td>
+      <td>${makeBadgeSel(d._id, "trainingOnline",   d.trainingOnline)}</td>
+      <td>${makeBadgeSel(d._id, "trainingTest",     d.trainingTest)}</td>
+      <td>${makeBadgeSel(d._id, "trainingRoleplay", d.trainingRoleplay)}</td>
+      <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
+                 onblur="updateField('${d._id}','notes',this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur()"></td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="act-btn act-btn-dropout" onclick="setDropout('${d._id}')">離脱</button>
+        <button class="act-btn act-btn-debut"   onclick="setDebuted('${d._id}')">デビュー</button>
+      </td>`;
+    body.appendChild(tr);
+  });
+}
+
+function renderProgress(docs) {
+  renderRecruitFlow(docs);
+  renderTrainingFlow(docs);
+}
+
+// ── 離脱 ─────────────────────────────────────────────────────────────
+function renderDropout(docs) {
+  const list = docs.filter(d => d.status === "dropout");
+  const body = document.getElementById("dropout-body");
+  body.innerHTML = "";
+  document.getElementById("dropout-empty").style.display = list.length === 0 ? "block" : "none";
+  list.forEach(d => {
+    const j  = d.screeningJudgment || "";
+    const hj = d.hiringJudgment || "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
+      <td>${makeBadgeSel(d._id, "dropoutStatus", d.dropoutStatus, 'dropout')}</td>
+      <td>${j ? `<span class="jbadge j${j}">${j} ${d.screeningScore||0}点</span>` : "-"}</td>
+      <td>${hj ? `<span style="font-size:11px;color:#1a7f37;font-weight:600">${esc(hj)}</span>` : '<span style="color:#8c959f;font-size:11px">-</span>'}</td>
+      <td><input class="ni" type="text" value="${esc(d.dropoutReason||"")}" placeholder="離脱理由..."
+                 onblur="updateField('${d._id}','dropoutReason',this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur()" style="width:200px"></td>
+      <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
+                 onblur="updateField('${d._id}','notes',this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur()"></td>
+      <td><button class="act-btn" style="color:#0969da;border-color:#0969da;white-space:nowrap" onclick="openRestoreDD(event,'${d._id}')">戻す ▾</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ── デビュー済み ──────────────────────────────────────────────────────
+function renderDebuted(docs) {
+  const debuted = docs.filter(d => d.status === "debuted");
+  document.getElementById("dbt-badge").textContent = debuted.length > 0 ? ` (${debuted.length})` : "";
+  const body = document.getElementById("dbt-body");
+  body.innerHTML = "";
+  document.getElementById("dbt-empty").style.display = debuted.length === 0 ? "block" : "none";
+  debuted.forEach(d => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
+      <td>${makeBadgeSel(d._id, "status",           d.status)}</td>
+      <td>${makeBadgeSel(d._id, "trainingOnline",   d.trainingOnline)}</td>
+      <td>${makeBadgeSel(d._id, "trainingTest",     d.trainingTest)}</td>
+      <td>${makeBadgeSel(d._id, "trainingRoleplay", d.trainingRoleplay)}</td>
+      <td><span style="font-size:11px;color:#57606a">${esc(d.debutAt||"-")}</span></td>
+      <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
+                 onblur="updateField('${d._id}','notes',this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ── 見送り ───────────────────────────────────────────────────────────
+let rejFilter = 'all';
+
+function setRejFilter(f) {
+  rejFilter = f;
+  ['all','sc','pg'].forEach(x => {
+    document.getElementById('rej-f-' + x).classList.toggle('active', x === f);
+  });
+  renderRejected(allDocs);
+}
+
+function renderRejected(docs) {
+  const rejected = docs.filter(d => d.status === "rejected");
+  const scRej = rejected.filter(d => !d.passedScreening);
+  const pgRej = rejected.filter(d =>  d.passedScreening);
+
+  document.getElementById("rej-f-all").textContent = `すべて(${rejected.length})`;
+  document.getElementById("rej-f-sc").textContent  = `書類選考後(${scRej.length})`;
+  document.getElementById("rej-f-pg").textContent  = `面談選考後(${pgRej.length})`;
+
+  const rows = rejFilter === 'sc' ? scRej : rejFilter === 'pg' ? pgRej : rejected;
+  const showKind = rejFilter === 'all';
+
+  document.getElementById("rej-head").innerHTML = `<tr>
+    <th>名前</th>
+    ${showKind ? '<th>フェーズ</th>' : ''}
+    <th>書類判定</th>
+    <th>採用判定</th>
+    <th>メモ</th>
+    <th></th>
+  </tr>`;
+
+  const body = document.getElementById("rej-body");
+  body.innerHTML = "";
+  document.getElementById("rej-empty").style.display = rows.length === 0 ? "block" : "none";
+
+  rows.forEach(d => {
+    const j   = d.screeningJudgment || "";
+    const hj  = d.hiringJudgment || "";
+    const isPg = !!d.passedScreening;
+    const phaseBg    = isPg ? '#ddf4ff' : '#fff8c5';
+    const phaseColor = isPg ? '#0550ae' : '#9a6700';
+    const phaseLabel = isPg ? '面談' : '書類';
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
+      ${showKind ? `<td>
+        <span class="bsel-trigger" onclick="openPhaseDD(event,'${d._id}',${isPg})">
+          <span class="sb" style="background:${phaseBg};color:${phaseColor};font-size:11px">${phaseLabel}</span>
+          <span style="font-size:9px;opacity:0.5">▾</span>
+        </span>
+      </td>` : ''}
+      <td>${j ? `<span class="jbadge j${j}">${j} ${d.screeningScore||0}点</span>` : "-"}</td>
+      <td>${isPg ? (hj ? `<span style="font-size:11px;color:#1a7f37;font-weight:600">${esc(hj)}</span>` : '<span style="color:#8c959f;font-size:11px">-</span>') : '<span style="color:#d0d7de;font-size:11px">-</span>'}</td>
+      <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
+                 onblur="updateField('${d._id}','notes',this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur()"></td>
+      <td><button class="act-btn" style="color:#0969da;border-color:#0969da;white-space:nowrap" onclick="openRestoreDD(event,'${d._id}')">戻す ▾</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ── マイルストーン日付 ───────────────────────────────────────────────
+function openMilestoneModal(docId) {
+  milestoneDocId = docId;
+  const doc = allDocs.find(d => d._id === docId);
+  if (!doc) return;
+  document.getElementById("ms-title").textContent = "候補者情報";
+  const toDate = v => v ? String(v).substring(0, 10) : "";
+  const inp = (id, val, ph="") =>
+    `<input type="text" id="${id}" value="${esc(val||"")}" placeholder="${ph}"
+            style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">`;
+  const dateFields = [
+    { key: "screeningAt",     label: "応募日" },
+    { key: "interviewAt",     label: "面談日" },
+    { key: "hiredAt",         label: "採用日" },
+    { key: "trainingStartAt", label: "座学突破日" },
+    { key: "debutAt",         label: "デビュー日" },
+  ];
+  document.getElementById("ms-fields").innerHTML = `
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">表示名（本名）</label>
+      ${inp("ms-name", doc.name, "例：益本樹林")}
+    </div>
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">CW・プラットフォーム名</label>
+      ${inp("ms-alias", doc.alias, "例：hanako_yamada")}
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">経路</label>
+      <select id="ms-route" onchange="toggleRouteOther()" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+        <option value="">未選択</option>
+        <option value="クラウドワークス"${doc.route==="クラウドワークス"?" selected":""}>クラウドワークス</option>
+        <option value="副業クラウド"${doc.route==="副業クラウド"?" selected":""}>副業クラウド</option>
+        <option value="その他"${(doc.route&&doc.route!=="クラウドワークス"&&doc.route!=="副業クラウド")?" selected":""}>その他</option>
+      </select>
+      <input id="ms-route-other" type="text" value="${esc((doc.route&&doc.route!=="クラウドワークス"&&doc.route!=="副業クラウド")?doc.route:"")}" placeholder="経路を入力..."
+             style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box;margin-top:6px;display:${(doc.route&&doc.route!=="クラウドワークス"&&doc.route!=="副業クラウド")?"block":"none"}">
+    </div>
+    ${dateFields.map(f => `
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">${f.label}</label>
+      <input type="date" id="ms-${f.key}" value="${toDate(doc[f.key])}"
+             style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>`).join("")}`;
+  document.getElementById("milestone-modal").classList.add("show");
+}
+
+async function saveMilestones() {
+  const base = {
+    name:  document.getElementById("ms-name").value.trim(),
+    alias: document.getElementById("ms-alias").value.trim(),
+  };
+  const routeSel = document.getElementById("ms-route").value;
+  base.route = routeSel === "その他"
+    ? document.getElementById("ms-route-other").value.trim()
+    : routeSel;
+
+  const firestoreUpdates = { ...base };
+  ["screeningAt","interviewAt","hiredAt","trainingStartAt","debutAt"].forEach(k => {
+    const v = document.getElementById("ms-" + k).value;
+    firestoreUpdates[k] = v || firebase.firestore.FieldValue.delete();
+  });
+
+  if (milestoneDocId) {
+    await db.collection(COL).doc(milestoneDocId).update(firestoreUpdates);
+    const doc = allDocs.find(d => d._id === milestoneDocId);
+    if (doc) {
+      Object.assign(doc, base);
+      ["screeningAt","interviewAt","hiredAt","trainingStartAt","debutAt"].forEach(k => {
+        const v = document.getElementById("ms-" + k).value;
+        if (v) doc[k] = v; else delete doc[k];
+      });
+    }
+  }
+  document.getElementById("milestone-modal").classList.remove("show");
+  renderAll();
+}
+
+// ── 管理設定モーダル ─────────────────────────────────────────────────
+function openStatusMgr() {
+  currentMgrTab = "status";
+  ["status","online","test","rp"].forEach(t =>
+    document.getElementById(`mgr-tab-${t}`).classList.toggle("active", t === "status")
+  );
+  renderMgrContent();
+  document.getElementById("status-modal").classList.add("show");
+}
+
+function switchMgrTab(tab) {
+  currentMgrTab = tab;
+  ["status","online","test","rp"].forEach(t =>
+    document.getElementById(`mgr-tab-${t}`).classList.toggle("active", t === tab)
+  );
+  renderMgrContent();
+}
+
+function renderMgrContent() {
+  const area = document.getElementById("mgr-content");
+  if (currentMgrTab === "status") {
+    const FIXED = ["rejected","dropout","debuted","screened"];
+    let rows = STATUS_LIST.map((s, i) => {
+      const tabs = s.tabs || [];
+      const isFixed = FIXED.includes(s.value);
+      const tabChks = isFixed ? `<span style="font-size:10px;color:#b0b8c1">自動振り分け</span>` : `
+        <label style="font-size:10px;white-space:nowrap;cursor:pointer">
+          <input type="checkbox" ${tabs.includes('recruit')?'checked':''} onchange="toggleStatusTab(${i},'recruit',this.checked)"> 採用
+        </label>
+        <label style="font-size:10px;white-space:nowrap;cursor:pointer">
+          <input type="checkbox" ${tabs.includes('training')?'checked':''} onchange="toggleStatusTab(${i},'training',this.checked)"> 研修
+        </label>
+        <label style="font-size:10px;white-space:nowrap;cursor:pointer">
+          <input type="checkbox" ${tabs.includes('dropout')?'checked':''} onchange="toggleStatusTab(${i},'dropout',this.checked)"> 離脱
+        </label>`;
+      const colorPicker = `<div id="cpa-${i}" style="display:none;padding:8px 12px 10px 30px;background:#f0f6ff;border-radius:0 0 6px 6px;margin:-2px 0 4px;border:1px solid #d0d7de;border-top:none">
+        <div style="font-size:10px;color:#57606a;margin-bottom:5px">色を選択：</div>
+        <div class="color-opts">${PRESET_COLORS.map((c,ci)=>`<div class="color-opt${s.bg===c.bg?' selected':''}" style="background:${c.bg};border-color:${s.bg===c.bg?c.color:'transparent'}" onclick="applyColorToStatus(${i},${ci})"></div>`).join("")}</div>
+      </div>`;
+      return `<div class="status-item-row" draggable="true"
+        ondragstart="dragStatusStart(event,${i})"
+        ondragover="dragStatusOver(event,${i})"
+        ondrop="dragStatusDrop(event,${i})"
+        ondragend="dragStatusEnd(event)"
+        id="sr-${i}">
+        <span class="drag-handle">⠿</span>
+        <span class="color-dot" style="background:${s.bg};border:1px solid #d0d7de" title="クリックで色変更" onclick="openColorPicker(${i},event)"></span>
+        <input class="sname-input" value="${esc(s.label)}" onchange="updateStatusLabel(${i},this.value)" onblur="updateStatusLabel(${i},this.value)">
+        <div style="display:flex;gap:6px;align-items:center">${tabChks}</div>
+        <button class="btn btn-x btn-sm" style="color:#cf222e" onclick="deleteStatus(${i})">削除</button>
+      </div>${colorPicker}`;
+    }).join("");
+
+    area.innerHTML = `
+      <div class="mgr-list">
+        ${rows}
+      </div>
+      <div class="mgr-add">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">新しいステータスを追加</div>
+        <input id="new-status-name" placeholder="ステータス名" style="border:1px solid #d0d7de;border-radius:5px;padding:5px 8px;font-size:12px;width:100%;margin-bottom:8px">
+        <div style="font-size:11px;color:#57606a;margin-bottom:4px">背景色：</div>
+        <div class="color-opts" id="new-color-opts"></div>
+        <button class="btn btn-g btn-sm" style="margin-top:8px" onclick="addCustomStatus()">追加</button>
+      </div>`;
+    renderNewColorOpts();
+  } else {
+    const tabMap = {
+      online: { label: "オンライン研修", key: "trainingOnline" },
+      test:   { label: "口頭テスト",     key: "trainingTest" },
+      rp:     { label: "ロープレテスト", key: "trainingRoleplay" },
+    };
+    const { key } = tabMap[currentMgrTab];
+    const opts = FIELD_OPTS[key] || [];
+    const rows = opts.map((o, i) => {
+      return `<div class="status-item-row" draggable="true"
+        ondragstart="dragFieldStart(event,'${key}',${i})"
+        ondragover="dragFieldOver(event,'${key}',${i})"
+        ondrop="dragFieldDrop(event,'${key}',${i})"
+        ondragend="dragFieldEnd(event)"
+        id="fr-${key}-${i}">
+        <span class="drag-handle">⠿</span>
+        <span class="color-dot" style="background:${o.bg};border:1px solid #d0d7de" title="クリックで色変更" onclick="openFieldColorPicker('${key}',${i},event)"></span>
+        <input class="sname-input" value="${esc(o.label)}" onchange="updateFieldOpt('${key}',${i},this.value)" onblur="updateFieldOpt('${key}',${i},this.value)">
+        <button class="btn btn-x btn-sm" style="color:#cf222e" onclick="deleteFieldOpt('${key}',${i})">削除</button>
+      </div>`;
+    }).join("");
+    area.innerHTML = `
+      <div class="mgr-list">
+        ${rows||'<div style="color:#8c959f;font-size:12px;padding:10px 0">選択肢がありません</div>'}
+        <div id="field-color-picker-area" style="display:none;margin-top:8px;padding:10px;background:#f6f8fa;border-radius:6px;border:1px solid #eaeef2">
+          <div style="font-size:11px;color:#57606a;margin-bottom:6px">色を選択</div>
+          <div class="color-opts" id="field-mgr-color-opts"></div>
+        </div>
+      </div>
+      <div class="mgr-add">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">新しいステータスを追加</div>
+        <input id="new-opt-val" placeholder="ステータス名" style="border:1px solid #d0d7de;border-radius:5px;padding:5px 8px;font-size:12px;width:100%;margin-bottom:8px">
+        <div style="font-size:11px;color:#57606a;margin-bottom:4px">背景色：</div>
+        <div class="color-opts" id="new-field-color-opts"></div>
+        <button class="btn btn-g btn-sm" style="margin-top:8px" onclick="addFieldOpt('${key}')">追加</button>
+      </div>`;
+    renderNewFieldColorOpts();
+  }
+}
+
+let dragStartIdx = null;
+let dragFieldStartKey = null, dragFieldStartIdx = null;
+
+function dragStatusStart(e, idx) {
+  dragStartIdx = idx;
+  e.dataTransfer.effectAllowed = "move";
+  setTimeout(() => { if (document.getElementById(`sr-${idx}`)) document.getElementById(`sr-${idx}`).style.opacity = "0.4"; }, 0);
+}
+function dragStatusOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  document.querySelectorAll(".status-item-row").forEach(r => r.classList.remove("drag-over"));
+  if (dragStartIdx !== null && dragStartIdx !== idx) {
+    const el = document.getElementById(`sr-${idx}`);
+    if (el) el.classList.add("drag-over");
+  }
+}
+function dragStatusEnd(e) {
+  e.currentTarget.style.opacity = "";
+  document.querySelectorAll(".status-item-row").forEach(r => r.classList.remove("drag-over"));
+  dragStartIdx = null;
+}
+async function dragStatusDrop(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll(".status-item-row").forEach(r => r.classList.remove("drag-over"));
+  if (dragStartIdx === null || dragStartIdx === idx) { dragStartIdx = null; return; }
+  const item = STATUS_LIST.splice(dragStartIdx, 1)[0];
+  STATUS_LIST.splice(idx, 0, item);
+  dragStartIdx = null;
+  await saveStatusList();
+  renderMgrContent();
+  renderAll();
+}
+
+function dragFieldStart(e, key, idx) {
+  dragFieldStartKey = key; dragFieldStartIdx = idx;
+  e.dataTransfer.effectAllowed = "move";
+  setTimeout(() => { const el = document.getElementById(`fr-${key}-${idx}`); if (el) el.style.opacity = "0.4"; }, 0);
+}
+function dragFieldOver(e, key, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  document.querySelectorAll(".status-item-row").forEach(r => r.classList.remove("drag-over"));
+  if (dragFieldStartKey === key && dragFieldStartIdx !== idx) {
+    const el = document.getElementById(`fr-${key}-${idx}`);
+    if (el) el.classList.add("drag-over");
+  }
+}
+function dragFieldEnd(e) {
+  e.currentTarget.style.opacity = "";
+  document.querySelectorAll(".status-item-row").forEach(r => r.classList.remove("drag-over"));
+  dragFieldStartKey = null; dragFieldStartIdx = null;
+}
+async function dragFieldDrop(e, key, idx) {
+  e.preventDefault();
+  document.querySelectorAll(".status-item-row").forEach(r => r.classList.remove("drag-over"));
+  if (dragFieldStartKey !== key || dragFieldStartIdx === null || dragFieldStartIdx === idx) {
+    dragFieldStartKey = null; dragFieldStartIdx = null; return;
+  }
+  const item = FIELD_OPTS[key].splice(dragFieldStartIdx, 1)[0];
+  FIELD_OPTS[key].splice(idx, 0, item);
+  dragFieldStartKey = null; dragFieldStartIdx = null;
+  await saveFieldOpts();
+  renderMgrContent();
+}
+
+function openFieldColorPicker(key, idx, e) {
+  e.stopPropagation();
+  fieldColorPickerForKey = key;
+  fieldColorPickerForIdx = idx;
+  const area = document.getElementById("field-color-picker-area");
+  area.style.display = "block";
+  document.getElementById("field-mgr-color-opts").innerHTML = PRESET_COLORS.map((c, i) =>
+    `<div class="color-opt" style="background:${c.bg};border-color:transparent" onclick="applyColorToFieldOpt(${i})"></div>`
+  ).join("");
+}
+
+function applyColorToFieldOpt(colorIdx) {
+  if (fieldColorPickerForKey === null || fieldColorPickerForIdx === null) return;
+  const c = PRESET_COLORS[colorIdx];
+  FIELD_OPTS[fieldColorPickerForKey][fieldColorPickerForIdx].bg    = c.bg;
+  FIELD_OPTS[fieldColorPickerForKey][fieldColorPickerForIdx].color = c.color;
+  fieldColorPickerForKey = null; fieldColorPickerForIdx = null;
+  document.getElementById("field-color-picker-area").style.display = "none";
+  saveFieldOpts();
+  renderMgrContent();
+  renderAll();
+}
+
+function renderNewFieldColorOpts() {
+  const el = document.getElementById("new-field-color-opts");
+  if (!el) return;
+  el.innerHTML = PRESET_COLORS.map((c, i) =>
+    `<div class="color-opt${i===selectedFieldColorIdx?" selected":""}" style="background:${c.bg};border-color:${i===selectedFieldColorIdx?c.color:'transparent'}"
+          onclick="selectFieldColor(${i})"></div>`
+  ).join("");
+}
+function selectFieldColor(i) {
+  selectedFieldColorIdx = i;
+  renderNewFieldColorOpts();
+}
+
+function openColorPicker(idx, e) {
+  e.stopPropagation();
+  const isOpen = document.getElementById(`cpa-${idx}`)?.style.display !== 'none';
+  STATUS_LIST.forEach((_, i) => {
+    const el = document.getElementById(`cpa-${i}`);
+    if (el) el.style.display = 'none';
+  });
+  if (!isOpen) {
+    const el = document.getElementById(`cpa-${idx}`);
+    if (el) el.style.display = 'block';
+  }
+}
+
+async function applyColorToStatus(idx, colorIdx) {
+  const c = PRESET_COLORS[colorIdx];
+  STATUS_LIST[idx].bg    = c.bg;
+  STATUS_LIST[idx].color = c.color;
+  await saveStatusList();
+  renderMgrContent();
+  renderAll();
+}
+
+function updateStatusLabel(idx, val) {
+  if (STATUS_LIST[idx].label === val) return;
+  STATUS_LIST[idx].label = val;
+  saveStatusList();
+  renderAll();
+}
+
+async function deleteStatus(idx) {
+  if (!confirm(`「${STATUS_LIST[idx].label}」を削除しますか？`)) return;
+  const deletedValue = STATUS_LIST[idx].value;
+  STATUS_LIST.splice(idx, 1);
+  await saveStatusList();
+  const targets = allDocs.filter(d => d.status === deletedValue);
+  await Promise.all(targets.map(d => db.collection(COL).doc(d._id).update({ status: "" })));
+  targets.forEach(d => { d.status = ""; });
+  renderMgrContent();
+  renderAll();
+}
+
+function renderNewColorOpts() {
+  const el = document.getElementById("new-color-opts");
+  if (!el) return;
+  el.innerHTML = PRESET_COLORS.map((c, i) =>
+    `<div class="color-opt${i===selectedColorIdx?" selected":""}" style="background:${c.bg};border-color:${i===selectedColorIdx?c.color:'transparent'}"
+          onclick="selectColor(${i})"></div>`
+  ).join("");
+}
+function selectColor(i) {
+  selectedColorIdx = i;
+  renderNewColorOpts();
+}
+
+async function toggleStatusTab(idx, tab, checked) {
+  const s = STATUS_LIST[idx];
+  if (!s.tabs) s.tabs = [];
+  if (checked && !s.tabs.includes(tab)) s.tabs.push(tab);
+  if (!checked) s.tabs = s.tabs.filter(t => t !== tab);
+  await saveStatusList();
+}
+
+async function addCustomStatus() {
+  const name = document.getElementById("new-status-name").value.trim();
+  if (!name) { alert("ステータス名を入力してください"); return; }
+  const col = PRESET_COLORS[selectedColorIdx];
+  const newStatus = { value: "custom_" + Date.now(), label: name, bg: col.bg, color: col.color, tabs: ["recruit"] };
+  STATUS_LIST.splice(STATUS_LIST.findIndex(s => s.value === "rejected"), 0, newStatus);
+  await saveStatusList();
+  document.getElementById("new-status-name").value = "";
+  renderMgrContent();
+  renderAll();
+}
+
+async function saveStatusList() {
+  await db.collection("recruitment_settings").doc("statuses").set({ statusList: STATUS_LIST });
+}
+
+async function updateFieldOpt(key, idx, val) {
+  if (FIELD_OPTS[key][idx].label === val) return;
+  FIELD_OPTS[key][idx].label = val;
+  await saveFieldOpts();
+  renderAll();
+}
+
+async function deleteFieldOpt(key, idx) {
+  if (!confirm("削除しますか？")) return;
+  FIELD_OPTS[key].splice(idx, 1);
+  await saveFieldOpts();
+  renderMgrContent();
+  renderAll();
+}
+
+async function addFieldOpt(key) {
+  const el = document.getElementById("new-opt-val");
+  const val = el.value.trim();
+  if (!val) return;
+  const col = PRESET_COLORS[selectedFieldColorIdx];
+  FIELD_OPTS[key].push({ label: val, bg: col.bg, color: col.color });
+  await saveFieldOpts();
+  el.value = "";
+  selectedFieldColorIdx = 0;
+  renderMgrContent();
+  renderAll();
+}
+
+async function saveFieldOpts() {
+  await db.collection("recruitment_settings").doc("fieldOptions").set(FIELD_OPTS);
+}
+
+// ── タブ・ビュー切り替え ─────────────────────────────────────────────
+let currentTab = 'train';
+function showTab(tab) {
+  currentTab = tab;
+  ["hire","train","dropout","rej","dbt"].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t===tab ? "" : "none";
+    document.getElementById(`tb-${t}`).classList.toggle("active", t===tab);
+  });
+  if (tab === "hire") showHireSubTab("pgrec");
+}
+function showHireSubTab(sub) {
+  hireSubTab = sub;
+  document.getElementById("hire-sc").style.display    = sub === 'sc'    ? "" : "none";
+  document.getElementById("hire-pgrec").style.display = sub === 'pgrec' ? "" : "none";
+  document.getElementById("stb-sc").classList.toggle("active",    sub === 'sc');
+  document.getElementById("stb-pgrec").classList.toggle("active", sub === 'pgrec');
+  if (sub === 'pgrec') requestAnimationFrame(updatePgStickyTops);
+}
+
+// ── アクション ────────────────────────────────────────────────────────
+async function advanceToInterview(docId) {
+  if (!confirm("面談に進めますか？")) return;
+  const doc = allDocs.find(d => d._id === docId);
+  const updates = { status: "interview_pending", passedScreening: true, advancedAt: new Date().toISOString() };
+  if (doc && !doc.interviewAt) updates.interviewAt = today();
+  await db.collection(COL).doc(docId).update(updates);
+  loadData();
+  showTab("hire");
+  showHireSubTab("pgrec");
+}
+
+function positionGDD(rect) {
+  const gdd = document.getElementById("gdd");
+  gdd.style.visibility = "hidden";
+  gdd.style.display = "block";
+  gdd.style.top  = (rect.bottom + 4) + "px";
+  gdd.style.left = rect.left + "px";
+  requestAnimationFrame(() => {
+    const gr = gdd.getBoundingClientRect();
+    if (gr.bottom > window.innerHeight - 8)
+      gdd.style.top = (rect.top - gr.height - 4) + "px";
+    if (gr.right > window.innerWidth - 8)
+      gdd.style.left = (window.innerWidth - gr.width - 8) + "px";
+    if (parseFloat(gdd.style.left) < 4)
+      gdd.style.left = "4px";
+    gdd.style.visibility = "visible";
+  });
+}
+
+function openRestoreDD(e, docId) {
+  e.stopPropagation();
+  const gdd = document.getElementById("gdd");
+  gdd.innerHTML = `
+    <div class="gdd-item" style="font-size:11px" onclick="restoreTo(event,'${docId}','hire')">採用フローへ</div>
+    <div class="gdd-item" style="font-size:11px" onclick="restoreTo(event,'${docId}','train')">研修管理へ</div>`;
+  positionGDD(e.currentTarget.getBoundingClientRect());
+}
+
+async function restoreTo(e, docId, dest) {
+  e.stopPropagation();
+  document.getElementById("gdd").style.display = "none";
+  const updates = { status: dest === 'train' ? "training" : "interview_pending", passedScreening: true };
+  if (dest === 'train') updates.hiredCheck = true;
+  await db.collection(COL).doc(docId).update(updates);
+  const doc = allDocs.find(d => d._id === docId);
+  if (doc) Object.assign(doc, updates);
+  renderAll();
+  if (dest === 'train') showTab('train');
+  else { showTab('hire'); showHireSubTab('pgrec'); }
+}
+
+function openPhaseDD(e, docId, isPg) {
+  e.stopPropagation();
+  const gdd = document.getElementById("gdd");
+  gdd.innerHTML = [
+    { label: '書類', val: false, bg: '#fff8c5', color: '#9a6700' },
+    { label: '面談', val: true,  bg: '#ddf4ff', color: '#0550ae' },
+  ].map(o => `<div class="gdd-item" onclick="setPhase(event,'${docId}',${o.val})">
+    <span class="sb" style="background:${o.bg};color:${o.color};font-size:11px">${o.label}</span>
+  </div>`).join("");
+  positionGDD(e.currentTarget.getBoundingClientRect());
+}
+
+async function setPhase(e, docId, isPg) {
+  e.stopPropagation();
+  document.getElementById("gdd").style.display = "none";
+  await db.collection(COL).doc(docId).update({ passedScreening: isPg });
+  const doc = allDocs.find(d => d._id === docId);
+  if (doc) doc.passedScreening = isPg;
+  renderAll();
+}
+
+async function toggleHireCheck(docId, value) {
+  const updates = { hiredCheck: value };
+  const doc = allDocs.find(d => d._id === docId);
+  if (value) {
+    if (doc && !doc.hiredAt) updates.hiredAt = today();
+    // 採用フロー→研修管理：研修管理の先頭ステータスを自動セット
+    const first = STATUS_LIST.find(s => s.tabs && s.tabs.includes('training'));
+    if (first) updates.status = first.value;
+  }
+  await db.collection(COL).doc(docId).update(updates);
+  if (doc) Object.assign(doc, updates);
+  renderAll();
+  if (value) showTab('train');
+}
+
+async function rejectAtScreening(docId) {
+  if (!confirm("見送りにしますか？")) return;
+  await db.collection(COL).doc(docId).update({ status: "rejected", passedScreening: false, rejectedAt: new Date().toISOString() });
+  loadData();
+}
+
+async function updateField(docId, field, value) {
+  const doc = allDocs.find(d => d._id === docId);
+  if (doc && doc[field] === value) return;
+
+  const updates = { [field]: value };
+
+  if (field === "status") {
+    const INTERVIEW_S = ["interview_pending","interview_ready","interview_scheduling","interview_scheduled"];
+    const CONTRACT_S  = ["contract_pending","contracted_vbo","contracted"];
+    if (INTERVIEW_S.includes(value) && doc && !doc.interviewAt)
+      updates.interviewAt = today();
+    if (CONTRACT_S.includes(value) && doc && !doc.contractedAt)
+      updates.contractedAt = today();
+    if (value === "training" && doc && !doc.trainingStartAt)
+      updates.trainingStartAt = today();
+    if (value === "debuted" && doc && !doc.debutAt)
+      updates.debutAt = today();
+  }
+
+  if (field === "trainingTest" && value === "合格" && doc && !doc.trainingStartAt) {
+    updates.trainingStartAt = today();
+  }
+
+  await db.collection(COL).doc(docId).update(updates);
+  if (doc) Object.assign(doc, updates);
+  renderAll();
+
+  if (field === "status") {
+    // 研修管理・離脱・見送りタブでのステータス変更は画面遷移しない
+    if (currentTab === 'train' || currentTab === 'dropout' || currentTab === 'rej') return;
+    const tab = statusToTab(value);
+    if (tab === "hire") { showTab("hire"); showHireSubTab("pgrec"); }
+    else showTab(tab);
+  }
+}
+
+async function setDropout(docId) {
+  if (!confirm("離脱にしますか？")) return;
+  await db.collection(COL).doc(docId).update({ status: "dropout", dropoutStatus: "" });
+  const doc = allDocs.find(d => d._id === docId);
+  if (doc) { doc.status = "dropout"; doc.dropoutStatus = ""; }
+  renderAll();
+  showTab('dropout');
+}
+async function setDebuted(docId) {
+  if (!confirm("デビュー済みにしますか？")) return;
+  await updateField(docId, "status", "debuted");
+}
+async function setRejected(docId) {
+  if (!confirm("見送りにしますか？")) return;
+  await updateField(docId, "status", "rejected");
+}
+
+// ── モーダル ──────────────────────────────────────────────────────────
+function renderMd(raw) {
+  let text = raw
+    .replace(/緒方さん/g, "社員")
+    .replace(/ファイル(も|に)保存します。?\n?/g, "")
+    .trim()
+    .replace(/^(---\n+)+/, '')               // 先頭の---除去
+    .replace(/\n\n(- )/g, '\n\n\n$1')        // 箇条書き前の空行を保持（\n\n\n→<br><br>）
+    .replace(/(- [^\n]+)\n\n([^-\n])/g, '$1\n\n\n$2'); // 箇条書き後の空行を保持
+  return esc(text)
+    .replace(/^(#{1,3}) (.+)$/gm, (_, h, t) => {
+      const sz = h.length === 1 ? "14px" : h.length === 2 ? "13px" : "12px";
+      return `<strong style="font-size:${sz};display:block;margin:6px 0 2px">${t}</strong>`;
+    })
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^&gt;(.+)$/gm, (_, t) => `<div style="border-left:3px solid #0969da;padding:3px 10px;margin:2px 0;background:#f6f8fa;border-radius:0 4px 4px 0;color:#24292f">${t.trim()}</div>`)
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #eaeef2;margin:5px 0">')
+    .replace(/\n\n/g, '<br>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(<br>|<hr[^>]*>)+/, '')
+    .replace(/(<br>)+(<strong)/g, '$2')
+    .replace(/^<strong ([^>]+)margin:6px/, '<strong $1margin:0');
+}
+function showDocDetail(docId, field, label) {
+  const doc = allDocs.find(d => d._id === docId);
+  if (!doc) return;
+  let raw = "";
+  if (field === "interviewPrepContent") {
+    const full = doc.interviewPrepContent || "";
+    const idx = full.indexOf('\n# ');
+    if (idx !== -1) {
+      const afterTitle = full.slice(idx + 1);
+      const nl = afterTitle.indexOf('\n');
+      raw = nl !== -1 ? afterTitle.slice(nl + 1) : afterTitle;
+    } else {
+      raw = full;
+    }
+  } else if (field === "screeningResult") {
+    const prep = doc.interviewPrepContent || "";
+    const start = prep.indexOf('## 書類選考');
+    const end   = prep.indexOf('\n# ');
+    if (start !== -1) {
+      const section = prep.slice(start, end !== -1 ? end : undefined);
+      // ## 書類選考　名前（...）行を除去して中身だけ
+      const nl = section.indexOf('\n');
+      raw = nl !== -1 ? section.slice(nl + 1) : section;
+    } else {
+      raw = doc.screeningResult || "";
+    }
+  } else {
+    raw = doc[field] || "";
+  }
+  document.getElementById("dm-title").textContent = `${label} - ${doc.name || ""}`;
+  const body = document.getElementById("dm-body");
+  body.style.whiteSpace = "normal";
+  body.innerHTML = renderMd(raw);
+  const dateArea = document.getElementById("dm-interview-date-area");
+  if (field === "interviewPrepContent") {
+    dmInterviewDocId = docId;
+    document.getElementById("dm-interview-date").value = doc.interviewAt ? String(doc.interviewAt).substring(0, 10) : "";
+    dateArea.style.display = "block";
+  } else {
+    dmInterviewDocId = null;
+    dateArea.style.display = "none";
+  }
+  document.getElementById("detail-modal").classList.add("show");
+}
+function openOnlineMemo() {
+  document.getElementById("omm-title").textContent = "オンライン研修メモ";
+  document.getElementById("omm-body").value = onlineTrainingMemo;
+  document.getElementById("online-memo-modal").classList.add("show");
+}
+async function saveOnlineMemo() {
+  const val = document.getElementById("omm-body").value;
+  onlineTrainingMemo = val;
+  await db.collection("recruitment_settings").doc("memos").set({ onlineTraining: val }, { merge: true });
+  document.getElementById("online-memo-modal").classList.remove("show");
+}
+async function saveDmInterviewDate() {
+  if (!dmInterviewDocId) return;
+  const val = document.getElementById("dm-interview-date").value;
+  await db.collection(COL).doc(dmInterviewDocId).update({ interviewAt: val || firebase.firestore.FieldValue.delete() });
+  const doc = allDocs.find(d => d._id === dmInterviewDocId);
+  if (doc) { if (val) doc.interviewAt = val; else delete doc.interviewAt; }
+  renderAll();
+}
+function showDetail(title, content) {
+  document.getElementById("dm-title").textContent = title;
+  const body = document.getElementById("dm-body");
+  body.style.whiteSpace = "pre-wrap";
+  body.textContent = content;
+  document.getElementById("dm-interview-date-area").style.display = "none";
+  dmInterviewDocId = null;
+  document.getElementById("detail-modal").classList.add("show");
+}
+function closeMod(id, e) {
+  if (e.target === document.getElementById(id))
+    document.getElementById(id).classList.remove("show");
+}
+
+function openAddCandidate() {
+  document.getElementById("add-name").value = "";
+  document.getElementById("add-alias").value = "";
+  document.getElementById("add-route").value = "";
+  document.getElementById("add-screeningAt").value = today();
+  document.getElementById("add-modal").classList.add("show");
+}
+
+function getAddFormData() {
+  return {
+    name:        document.getElementById("add-name").value.trim(),
+    alias:       document.getElementById("add-alias").value.trim(),
+    route:       document.getElementById("add-route").value.trim(),
+    screeningAt: document.getElementById("add-screeningAt").value || today(),
+    createdAt:   new Date().toISOString(),
+  };
+}
+
+async function addCandidateScreening() {
+  const base = getAddFormData();
+  if (!base.name) { alert("表示名を入力してください"); return; }
+  await db.collection(COL).add({ ...base, status: "screened", passedScreening: false });
+  document.getElementById("add-modal").classList.remove("show");
+  await loadData();
+  showTab("hire");
+  showHireSubTab("sc");
+}
+
+async function addCandidateLater() {
+  const base = getAddFormData();
+  if (!base.name) { alert("表示名を入力してください"); return; }
+  await db.collection(COL).add({ ...base, status: "interview_pending", passedScreening: true });
+  document.getElementById("add-modal").classList.remove("show");
+  await loadData();
+  showTab("hire");
+  showHireSubTab("pgrec");
+}
+
+let manualScreeningDocId = null;
+let selectedJudgment = null;
+
+function openManualScreening(docId) {
+  manualScreeningDocId = docId;
+  selectedJudgment = null;
+  const doc = allDocs.find(d => d._id === docId);
+  document.getElementById("screening-modal-title").textContent = `書類判定 - ${doc ? doc.name : ""}`;
+  document.getElementById("sj-score").value = "0";
+  document.getElementById("sj-comment").value = "";
+  ["A","B","C"].forEach(j => {
+    const btn = document.getElementById(`sj-${j}`);
+    btn.className = "btn btn-x";
+  });
+  document.getElementById("screening-modal").classList.add("show");
+}
+
+function selectJudgment(j) {
+  selectedJudgment = j;
+  const colors = { A: "btn-g", B: "btn btn-b", C: "btn-r" };
+  ["A","B","C"].forEach(x => {
+    document.getElementById(`sj-${x}`).className = "btn " + (x === j ? { A:"btn-g", B:"btn-b", C:"btn-r" }[x] : "btn-x");
+  });
+}
+
+async function saveManualScreening() {
+  if (!selectedJudgment) { alert("判定（A/B/C）を選択してください"); return; }
+  const score   = parseInt(document.getElementById("sj-score").value) || 0;
+  const comment = document.getElementById("sj-comment").value.trim();
+  const updates = {
+    screeningJudgment: selectedJudgment,
+    screeningScore:    score,
+    ...(comment ? { screeningResult: comment } : {}),
+  };
+  await db.collection(COL).doc(manualScreeningDocId).update(updates);
+  const doc = allDocs.find(d => d._id === manualScreeningDocId);
+  if (doc) Object.assign(doc, updates);
+  document.getElementById("screening-modal").classList.remove("show");
+  renderAll();
+}
+
+async function deleteCandidate() {
+  const doc = allDocs.find(d => d._id === milestoneDocId);
+  if (!doc) return;
+  if (!confirm(`「${doc.name || "この候補者"}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+  await db.collection(COL).doc(milestoneDocId).delete();
+  document.getElementById("milestone-modal").classList.remove("show");
+  loadData();
+}
+
+function toggleRouteOther() {
+  const sel = document.getElementById("ms-route");
+  const other = document.getElementById("ms-route-other");
+  if (sel && other) other.style.display = sel.value === "その他" ? "block" : "none";
+}
+
+function openOralTest() {
+  if (confirm("口頭採点システムを表示しますか？")) {
+    window.open("https://splendorous-palmier-c2c803.netlify.app/", "_blank");
+  }
+}
+function openRoleplayTest() {
+  if (confirm("ロープレテストを表示しますか？")) {
+    window.open("https://curious-paprenjak-23db9d.netlify.app/", "_blank");
+  }
+}
+
+function renderAll() {
+  renderDashboard(allDocs);
+  renderScreened(allDocs);
+  renderProgress(allDocs);
+  renderDropout(allDocs);
+  renderDebuted(allDocs);
+  renderRejected(allDocs);
+}
+
+showTab("train");
+loadData();
+</script>
+</body>
+</html>
