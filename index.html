@@ -37,7 +37,7 @@ body { background: #f6f8fa; color: #24292f; font-family: -apple-system, 'Helveti
 .vbtn.active { background: #0969da; border-color: #0969da; color: #fff; }
 
 /* 書類選考カード */
-.sc-grid { display: flex; flex-direction: column; gap: 8px; }
+.sc-grid { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow: auto; padding-bottom: 12px; }
 .ccard { background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: 12px 16px; }
 .ccard-h { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
 .cname { font-size: 14px; font-weight: 600; }
@@ -325,6 +325,25 @@ body { background: #f6f8fa; color: #24292f; font-family: -apple-system, 'Helveti
   </div>
 </div>
 
+<!-- 面談日設定モーダル -->
+<div class="modal-ov" id="interview-date-modal" onclick="closeMod('interview-date-modal',event)">
+  <div class="modal" style="max-width:300px">
+    <h2 id="idm-title">面談日を設定</h2>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">日付</label>
+      <input type="date" id="idm-date" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:#57606a;display:block;margin-bottom:3px">開始時間</label>
+      <input type="time" id="idm-time" style="border:1px solid #d0d7de;border-radius:5px;padding:4px 8px;font-size:12px;width:100%;box-sizing:border-box">
+    </div>
+    <div class="mf">
+      <button class="btn btn-x" onclick="document.getElementById('interview-date-modal').classList.remove('show')">閉じる</button>
+      <button class="btn btn-b" onclick="saveInterviewDate()">登録</button>
+    </div>
+  </div>
+</div>
+
 <!-- オンライン研修メモモーダル -->
 <div class="modal-ov" id="online-memo-modal" onclick="closeMod('online-memo-modal',event)">
   <div class="modal" style="max-width:520px">
@@ -395,6 +414,7 @@ let colorPickerForIdx = null;
 let gddDocId = null, gddField = null;
 let dmInterviewDocId = null;
 let onlineTrainingMemo = "";
+let interviewDateDocId = null;
 let selectedFieldColorIdx = 0;
 let fieldColorPickerForKey = null, fieldColorPickerForIdx = null;
 
@@ -833,17 +853,19 @@ function renderRecruitFlow(docs) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
-      <td>${makeBadgeSel(d._id, "status", d.status, 'recruit')}</td>
+      <td style="white-space:nowrap">${makeBadgeSel(d._id, "status", d.status, 'recruit')}${d.status === "interview_scheduled"
+        ? d.interviewAt
+          ? `<span onclick="openInterviewDateModal('${d._id}')" style="cursor:pointer;font-size:11px;color:#1a7f37;margin-left:6px;font-weight:600">${fmtInterviewDate(d.interviewAt)}</span>`
+          : `<span onclick="openInterviewDateModal('${d._id}')" style="cursor:pointer;font-size:11px;color:#cf222e;margin-left:6px;text-decoration:underline">📅 面談日を設定</span>`
+        : ''}</td>
       <td style="white-space:nowrap">
         <button class="hire-chk${d.hiredCheck?' checked':''}" onclick="toggleHireCheck('${d._id}',${!d.hiredCheck})">${d.hiredCheck?'✓ 採用':'採用'}</button>
         <button class="act-btn act-btn-rej" style="margin-left:4px" onclick="setRejected('${d._id}')">見送り</button>
       </td>
       <td>${j ? `<span class="jbadge j${j}" ${d.screeningResult?`style="cursor:pointer" onclick="showDocDetail('${d._id}','screeningResult','書類選考')"`:''} title="${d.screeningResult?'クリックで詳細':''}">${j} ${d.screeningScore||0}点</span>` : `<span style="color:#0969da;cursor:pointer;font-size:11px;text-decoration:underline" onclick="openManualScreening('${d._id}')">+ 判定する</span>`}</td>
-      <td>${d.status==="interview_pending"
-        ? `<span class="sb" style="background:#fff8c5;color:#9a6700;font-weight:700;font-size:12px">待ち</span>`
-        : d.interviewPrepContent
-          ? `<button class="btn btn-b btn-sm" onclick="showDocDetail('${d._id}','interviewPrepContent','面談準備')">完了</button>`
-          : `<span style="color:#d0d7de;font-size:11px">-</span>`}</td>
+      <td>${d.interviewPrepContent
+        ? `<button class="btn btn-b btn-sm" onclick="showDocDetail('${d._id}','interviewPrepContent','面談準備')">完了</button>`
+        : `<span class="sb" style="background:#fff8c5;color:#9a6700;font-weight:700;font-size:12px">待ち</span>`}</td>
       <td>${hj
         ? d.hiringEvalContent
           ? `<button class="btn btn-b btn-sm" onclick="showDocDetail('${d._id}','hiringEvalContent','採用判定')">${esc(hj)}</button>`
@@ -936,7 +958,7 @@ function renderDropout(docs) {
     tr.innerHTML = `
       <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
       <td>${makeBadgeSel(d._id, "dropoutStatus", d.dropoutStatus, 'dropout')}</td>
-      <td>${j ? `<span class="jbadge j${j}">${j} ${d.screeningScore||0}点</span>` : "-"}</td>
+      <td>${j ? `<span class="jbadge j${j}" ${d.screeningResult?`style="cursor:pointer" onclick="showDocDetail('${d._id}','screeningResult','書類選考')"`:''} title="${d.screeningResult?'クリックで詳細':''}">${j} ${d.screeningScore||0}点</span>` : "-"}</td>
       <td>${hj ? `<span style="font-size:11px;color:#1a7f37;font-weight:600">${esc(hj)}</span>` : '<span style="color:#8c959f;font-size:11px">-</span>'}</td>
       <td><input class="ni" type="text" value="${esc(d.dropoutReason||"")}" placeholder="離脱理由..."
                  onblur="updateField('${d._id}','dropoutReason',this.value)"
@@ -952,7 +974,7 @@ function renderDropout(docs) {
 // ── デビュー済み ──────────────────────────────────────────────────────
 function renderDebuted(docs) {
   const debuted = docs.filter(d => d.status === "debuted");
-  document.getElementById("dbt-badge").textContent = debuted.length > 0 ? ` (${debuted.length})` : "";
+  document.getElementById("dbt-badge").textContent = "";
   const body = document.getElementById("dbt-body");
   body.innerHTML = "";
   document.getElementById("dbt-empty").style.display = debuted.length === 0 ? "block" : "none";
@@ -1024,7 +1046,7 @@ function renderRejected(docs) {
           <span style="font-size:9px;opacity:0.5">▾</span>
         </span>
       </td>` : ''}
-      <td>${j ? `<span class="jbadge j${j}">${j} ${d.screeningScore||0}点</span>` : "-"}</td>
+      <td>${j ? `<span class="jbadge j${j}" ${d.screeningResult?`style="cursor:pointer" onclick="showDocDetail('${d._id}','screeningResult','書類選考')"`:''} title="${d.screeningResult?'クリックで詳細':''}">${j} ${d.screeningScore||0}点</span>` : "-"}</td>
       <td>${isPg ? (hj ? `<span style="font-size:11px;color:#1a7f37;font-weight:600">${esc(hj)}</span>` : '<span style="color:#8c959f;font-size:11px">-</span>') : '<span style="color:#d0d7de;font-size:11px">-</span>'}</td>
       <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
                  onblur="updateField('${d._id}','notes',this.value)"
@@ -1451,8 +1473,8 @@ function showHireSubTab(sub) {
 async function advanceToInterview(docId) {
   if (!confirm("面談に進めますか？")) return;
   const doc = allDocs.find(d => d._id === docId);
-  const updates = { status: "interview_pending", passedScreening: true, advancedAt: new Date().toISOString() };
-  if (doc && !doc.interviewAt) updates.interviewAt = today();
+  const first = STATUS_LIST.find(s => s.tabs && s.tabs.includes('recruit'));
+  const updates = { status: first ? first.value : "interview_scheduling", passedScreening: true, advancedAt: new Date().toISOString() };
   await db.collection(COL).doc(docId).update(updates);
   loadData();
   showTab("hire");
@@ -1548,10 +1570,7 @@ async function updateField(docId, field, value) {
   const updates = { [field]: value };
 
   if (field === "status") {
-    const INTERVIEW_S = ["interview_pending","interview_ready","interview_scheduling","interview_scheduled"];
     const CONTRACT_S  = ["contract_pending","contracted_vbo","contracted"];
-    if (INTERVIEW_S.includes(value) && doc && !doc.interviewAt)
-      updates.interviewAt = today();
     if (CONTRACT_S.includes(value) && doc && !doc.contractedAt)
       updates.contractedAt = today();
     if (value === "training" && doc && !doc.trainingStartAt)
@@ -1832,6 +1851,43 @@ function showDocDetail(docId, field, label) {
     dateArea.style.display = "none";
   }
   document.getElementById("detail-modal").classList.add("show");
+}
+function fmtInterviewDate(v) {
+  if (!v) return "";
+  const days = ['日','月','火','水','木','金','土'];
+  const s = String(v);
+  const hasTime = s.length > 10;
+  const d = new Date(hasTime ? v : v + 'T00:00');
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const dow = days[d.getDay()];
+  if (hasTime) {
+    const h = d.getHours().toString().padStart(2,'0');
+    const min = d.getMinutes().toString().padStart(2,'0');
+    return `${m}/${day}(${dow}) ${h}:${min}~`;
+  }
+  return `${m}/${day}(${dow})`;
+}
+function openInterviewDateModal(docId) {
+  interviewDateDocId = docId;
+  const doc = allDocs.find(d => d._id === docId);
+  if (!doc) return;
+  document.getElementById("idm-title").textContent = `面談日を設定 - ${doc.name||""}`;
+  const v = doc.interviewAt ? String(doc.interviewAt) : "";
+  document.getElementById("idm-date").value = v.substring(0, 10);
+  document.getElementById("idm-time").value = v.length > 10 ? v.substring(11, 16) : "";
+  document.getElementById("interview-date-modal").classList.add("show");
+}
+async function saveInterviewDate() {
+  if (!interviewDateDocId) return;
+  const date = document.getElementById("idm-date").value;
+  const time = document.getElementById("idm-time").value;
+  const val = date ? (time ? `${date}T${time}` : date) : null;
+  await db.collection(COL).doc(interviewDateDocId).update({ interviewAt: val || firebase.firestore.FieldValue.delete() });
+  const doc = allDocs.find(d => d._id === interviewDateDocId);
+  if (doc) { if (val) doc.interviewAt = val; else delete doc.interviewAt; }
+  document.getElementById("interview-date-modal").classList.remove("show");
+  renderAll();
 }
 function openOnlineMemo() {
   document.getElementById("omm-title").textContent = "オンライン研修メモ";
