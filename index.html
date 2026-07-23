@@ -234,7 +234,7 @@ body { background: #f6f8fa; color: #24292f; font-family: -apple-system, 'Helveti
   <!-- デビュー済み -->
   <div id="tab-dbt" style="display:none">
     <div class="tw"><table class="pt">
-      <thead><tr><th>名前</th><th>進行状況</th><th>オンライン研修</th><th><span onclick="openOralTest()" style="cursor:pointer;color:#0969da">口頭テスト</span></th><th><span onclick="openRoleplayTest()" style="cursor:pointer;color:#0969da">ロープレテスト</span></th><th>デビュー日</th><th>メモ</th></tr></thead>
+      <thead><tr><th>名前</th><th>進行状況</th><th><span onclick="openOralTest()" style="cursor:pointer;color:#0969da">オンライン研修・口頭テスト</span></th><th><span onclick="openRoleplayTest()" style="cursor:pointer;color:#0969da">ロープレテスト</span></th><th>デビュー日</th><th>メモ</th></tr></thead>
       <tbody id="dbt-body"></tbody>
     </table></div>
     <div class="empty" id="dbt-empty" style="display:none">デビュー済みの方はいません</div>
@@ -344,21 +344,6 @@ body { background: #f6f8fa; color: #24292f; font-family: -apple-system, 'Helveti
   </div>
 </div>
 
-<!-- オンライン研修メモモーダル -->
-<div class="modal-ov" id="online-memo-modal" onclick="closeMod('online-memo-modal',event)">
-  <div class="modal" style="max-width:520px">
-    <h2 id="omm-title"></h2>
-    <div style="margin-bottom:10px">
-      <textarea id="omm-body" rows="12" placeholder="メモを入力..."
-                style="width:100%;box-sizing:border-box;border:1px solid #d0d7de;border-radius:5px;padding:8px;font-size:12px;line-height:1.7;resize:vertical;font-family:inherit"></textarea>
-    </div>
-    <div class="mf">
-      <button class="btn btn-x" onclick="document.getElementById('online-memo-modal').classList.remove('show')">閉じる</button>
-      <button class="btn btn-b" onclick="saveOnlineMemo()">保存</button>
-    </div>
-  </div>
-</div>
-
 <!-- マイルストーン日付編集モーダル -->
 <div class="modal-ov" id="milestone-modal" onclick="closeMod('milestone-modal',event)">
   <div class="modal" style="max-width:380px">
@@ -380,8 +365,7 @@ body { background: #f6f8fa; color: #24292f; font-family: -apple-system, 'Helveti
     <h2>⚙ ステータス管理</h2>
     <div class="mgr-tabs">
       <button class="mgr-tab active" id="mgr-tab-status" onclick="switchMgrTab('status')">進行状況</button>
-      <button class="mgr-tab" id="mgr-tab-online"  onclick="switchMgrTab('online')">オンライン研修</button>
-      <button class="mgr-tab" id="mgr-tab-test"    onclick="switchMgrTab('test')">口頭テスト</button>
+      <button class="mgr-tab" id="mgr-tab-test"    onclick="switchMgrTab('test')">オンライン研修・口頭テスト</button>
       <button class="mgr-tab" id="mgr-tab-rp"      onclick="switchMgrTab('rp')">ロープレテスト</button>
     </div>
     <div id="mgr-content"></div>
@@ -413,7 +397,6 @@ let selectedColorIdx = 0;
 let colorPickerForIdx = null;
 let gddDocId = null, gddField = null;
 let dmInterviewDocId = null;
-let onlineTrainingMemo = "";
 let interviewDateDocId = null;
 let selectedFieldColorIdx = 0;
 let fieldColorPickerForKey = null, fieldColorPickerForIdx = null;
@@ -448,12 +431,6 @@ function statusToTab(status) {
 }
 
 let FIELD_OPTS = {
-  trainingOnline:   [
-    { label: "未実施",       bg: "#f1f1f1", color: "#8c959f" },
-    { label: "日程調整中",   bg: "#fff8c5", color: "#9a6700" },
-    { label: "日程調整完了", bg: "#ddf4ff", color: "#0550ae" },
-    { label: "実施済み",     bg: "#dafbe1", color: "#1a7f37" },
-  ],
   trainingTest: [
     { label: "未実施", bg: "#f1f1f1", color: "#8c959f" },
     { label: "合格",   bg: "#dafbe1", color: "#1a7f37" },
@@ -506,12 +483,10 @@ function today() { return new Date().toISOString().slice(0, 10); }
 // ── データ読み込み ────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const [statusDoc, fieldOptDoc, memosDoc] = await Promise.all([
+    const [statusDoc, fieldOptDoc] = await Promise.all([
       db.collection("recruitment_settings").doc("statuses").get(),
       db.collection("recruitment_settings").doc("fieldOptions").get(),
-      db.collection("recruitment_settings").doc("memos").get(),
     ]);
-    if (memosDoc.exists) onlineTrainingMemo = memosDoc.data().onlineTraining || "";
 
     if (statusDoc.exists) {
       const data = statusDoc.data();
@@ -544,7 +519,7 @@ async function loadData() {
     }
     if (fieldOptDoc.exists) {
       const fo = fieldOptDoc.data();
-      ["trainingOnline","trainingTest","trainingRoleplay","debutStatus"].forEach(key => {
+      ["trainingTest","trainingRoleplay","debutStatus"].forEach(key => {
         if (fo[key] && fo[key].length > 0) {
           if (typeof fo[key][0] === "string") {
             // 旧フォーマット（文字列配列）→ オブジェクトに変換
@@ -778,7 +753,6 @@ function pgSortVal(d, col) {
     case 'screening':     { const i = ['A','B','C'].indexOf(d.screeningJudgment); return i === -1 ? 99 : i; }
     case 'interviewPrep': return d.interviewPrepContent ? 0 : 1;
     case 'hiring':        { const i = ['A','B','C'].indexOf(d.hiringJudgment); return i === -1 ? 99 : i; }
-    case 'trainingOnline':
     case 'trainingTest':
     case 'trainingRoleplay': {
       const opts = FIELD_OPTS[col] || [];
@@ -915,8 +889,7 @@ function renderTrainingFlow(docs) {
   head.innerHTML = `<tr>
     ${sortThTr('名前', 'name')}
     ${sortThTr('進行状況', 'status')}
-    <th><span onclick="openOnlineMemo()" style="cursor:pointer;color:#0969da">オンライン研修</span><span class="sort-btn${trSortCol==='trainingOnline'?' active':''}" onclick="setTrSort('trainingOnline')">${trSortCol==='trainingOnline'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
-    <th><span onclick="openOralTest()" style="cursor:pointer;color:#0969da">口頭テスト</span><span class="sort-btn${trSortCol==='trainingTest'?' active':''}" onclick="setTrSort('trainingTest')">${trSortCol==='trainingTest'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
+    <th><span onclick="openOralTest()" style="cursor:pointer;color:#0969da">オンライン研修・口頭テスト</span><span class="sort-btn${trSortCol==='trainingTest'?' active':''}" onclick="setTrSort('trainingTest')">${trSortCol==='trainingTest'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
     <th><span onclick="openRoleplayTest()" style="cursor:pointer;color:#0969da">ロープレテスト</span><span class="sort-btn${trSortCol==='trainingRoleplay'?' active':''}" onclick="setTrSort('trainingRoleplay')">${trSortCol==='trainingRoleplay'?(trSortDir==='asc'?'▲':'▼'):'⇅'}</span></th>
     <th>メモ</th>
     <th></th>
@@ -926,7 +899,6 @@ function renderTrainingFlow(docs) {
     tr.innerHTML = `
       <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
       <td>${makeBadgeSel(d._id, "status",          d.status, 'training')}</td>
-      <td>${makeBadgeSel(d._id, "trainingOnline",   d.trainingOnline)}</td>
       <td>${makeBadgeSel(d._id, "trainingTest",     d.trainingTest)}</td>
       <td>${makeBadgeSel(d._id, "trainingRoleplay", d.trainingRoleplay)}</td>
       <td><input class="ni" type="text" value="${esc(d.notes||"")}" placeholder="メモ..."
@@ -983,7 +955,6 @@ function renderDebuted(docs) {
     tr.innerHTML = `
       <td class="nc" onclick="openMilestoneModal('${d._id}')" style="cursor:pointer;color:#0969da">${esc(d.name||"不明")}</td>
       <td>${makeBadgeSel(d._id, "status",           d.status)}</td>
-      <td>${makeBadgeSel(d._id, "trainingOnline",   d.trainingOnline)}</td>
       <td>${makeBadgeSel(d._id, "trainingTest",     d.trainingTest)}</td>
       <td>${makeBadgeSel(d._id, "trainingRoleplay", d.trainingRoleplay)}</td>
       <td><span style="font-size:11px;color:#57606a">${esc(d.debutAt||"-")}</span></td>
@@ -1136,7 +1107,7 @@ async function saveMilestones() {
 // ── 管理設定モーダル ─────────────────────────────────────────────────
 function openStatusMgr() {
   currentMgrTab = "status";
-  ["status","online","test","rp"].forEach(t =>
+  ["status","test","rp"].forEach(t =>
     document.getElementById(`mgr-tab-${t}`).classList.toggle("active", t === "status")
   );
   renderMgrContent();
@@ -1145,7 +1116,7 @@ function openStatusMgr() {
 
 function switchMgrTab(tab) {
   currentMgrTab = tab;
-  ["status","online","test","rp"].forEach(t =>
+  ["status","test","rp"].forEach(t =>
     document.getElementById(`mgr-tab-${t}`).classList.toggle("active", t === tab)
   );
   renderMgrContent();
@@ -1200,9 +1171,8 @@ function renderMgrContent() {
     renderNewColorOpts();
   } else {
     const tabMap = {
-      online: { label: "オンライン研修", key: "trainingOnline" },
-      test:   { label: "口頭テスト",     key: "trainingTest" },
-      rp:     { label: "ロープレテスト", key: "trainingRoleplay" },
+      test:   { label: "オンライン研修・口頭テスト", key: "trainingTest" },
+      rp:     { label: "ロープレテスト",             key: "trainingRoleplay" },
     };
     const { key } = tabMap[currentMgrTab];
     const opts = FIELD_OPTS[key] || [];
@@ -1888,17 +1858,6 @@ async function saveInterviewDate() {
   if (doc) { if (val) doc.interviewAt = val; else delete doc.interviewAt; }
   document.getElementById("interview-date-modal").classList.remove("show");
   renderAll();
-}
-function openOnlineMemo() {
-  document.getElementById("omm-title").textContent = "オンライン研修メモ";
-  document.getElementById("omm-body").value = onlineTrainingMemo;
-  document.getElementById("online-memo-modal").classList.add("show");
-}
-async function saveOnlineMemo() {
-  const val = document.getElementById("omm-body").value;
-  onlineTrainingMemo = val;
-  await db.collection("recruitment_settings").doc("memos").set({ onlineTraining: val }, { merge: true });
-  document.getElementById("online-memo-modal").classList.remove("show");
 }
 async function saveDmInterviewDate() {
   if (!dmInterviewDocId) return;
